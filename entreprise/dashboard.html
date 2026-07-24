@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace entreprise — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <div class="nav-actions">
+      <span id="nom-entreprise-topbar" style="font-size:.85rem; color:var(--slate);"></span>
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong id="nom-entreprise-side">—</strong>Compte entreprise</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html" class="active">Tableau de bord</a></li>
+      <li><a href="publier-offre.html">Publier une offre</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2 id="titre-bienvenue">Bienvenue</h2>
+        <p>Gérez vos offres de stage et vos candidatures reçues.</p>
+      </div>
+      <a href="publier-offre.html" class="btn btn-amber">+ Publier une offre</a>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-offres-actives">—</div>
+        <div class="stat-label">Offres actives</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-candidatures">—</div>
+        <div class="stat-label">Candidatures reçues</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-en-attente">—</div>
+        <div class="stat-label">En attente de validation RH</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-entretiens">—</div>
+        <div class="stat-label">Entretiens planifiés</div>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom:14px;">Mes offres</h3>
+    <div class="table-scroll" style="margin-bottom:36px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Offre</th>
+          <th>Horaires demandés</th>
+          <th>Candidatures</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody id="corps-tableau-offres">
+        <tr><td colspan="4">Chargement...</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 style="margin-bottom:14px;">Dernières candidatures reçues</h3>
+    <div id="liste-candidatures" class="offer-grid">
+      <p class="hint">Chargement...</p>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  protegerPage(["entreprise"], "../connexion.html", async (profil) => {
+    const nomAffiche = profil.entrepriseNom || profil.nom;
+    document.getElementById("nom-entreprise-topbar").textContent = nomAffiche;
+    document.getElementById("nom-entreprise-side").textContent = nomAffiche;
+    document.getElementById("titre-bienvenue").textContent = `Bienvenue, ${nomAffiche}`;
+
+    const [offres, candidatures] = await Promise.all([
+      chargerOffresEntreprise(profil.uid),
+      chargerCandidaturesEntreprise(profil.uid),
+    ]);
+
+    // Nombre de candidatures par offre, pour la colonne "Candidatures"
+    const nbCandidaturesParOffre = {};
+    candidatures.forEach((c) => {
+      nbCandidaturesParOffre[c.offreId] = (nbCandidaturesParOffre[c.offreId] || 0) + 1;
+    });
+
+    document.getElementById("stat-offres-actives").textContent = offres.filter((o) => o.statut === "validee").length;
+    document.getElementById("stat-candidatures").textContent = candidatures.length;
+    document.getElementById("stat-en-attente").textContent = offres.filter((o) => o.statut === "en_attente").length;
+    document.getElementById("stat-entretiens").textContent = candidatures.filter((c) => c.statut === "entretien").length;
+
+    const badgeParStatutOffre = { en_attente: "badge-warning", validee: "badge-success", refusee: "badge-danger" };
+    const libelleParStatutOffre = { en_attente: "En attente", validee: "Validée", refusee: "Refusée" };
+
+    const corpsOffres = document.getElementById("corps-tableau-offres");
+    corpsOffres.innerHTML = offres.length
+      ? offres.map((o) => `
+        <tr>
+          <td>${o.titre}</td>
+          <td>${labelHoraire(o.horaire)}</td>
+          <td>${nbCandidaturesParOffre[o.id] || 0}</td>
+          <td><span class="badge ${badgeParStatutOffre[o.statut] || "badge-neutral"}">${libelleParStatutOffre[o.statut] || o.statut}</span></td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="4">Aucune offre publiée pour le moment.</td></tr>`;
+
+    const listeCandidatures = document.getElementById("liste-candidatures");
+    const dernieresCandidatures = candidatures
+      .slice()
+      .sort((a, b) => (b.dateEnvoi?.seconds || 0) - (a.dateEnvoi?.seconds || 0))
+      .slice(0, 6);
+
+    listeCandidatures.innerHTML = dernieresCandidatures.length
+      ? dernieresCandidatures.map((c) => `
+        <div class="offer-card">
+          <div class="offer-top">
+            <div>
+              <h3 style="margin-bottom:2px;">${c.etudiantNom}</h3>
+              <p style="margin:0;">${c.offreTitre}</p>
+            </div>
+            <span class="offer-match">${c.matchScore}% compatible</span>
+          </div>
+          <div class="tag-row">
+            <span class="badge ${classeBadgeStatut(c.statut)}">${libelleStatutCandidature(c.statut)}</span>
+          </div>
+          <div>
+            <button class="btn btn-ghost btn-sm" data-planifier="${c.id}" ${c.statut === "entretien" || c.statut === "acceptee" ? "disabled" : ""}>
+              Planifier un entretien
+            </button>
+          </div>
+        </div>
+      `).join("")
+      : `<div class="empty-state"><h3>Aucune candidature reçue</h3><p>Publiez une offre pour commencer à recevoir des candidatures.</p></div>`;
+
+    listeCandidatures.querySelectorAll("[data-planifier]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        btn.textContent = "Mise à jour...";
+        await mettreAJourStatutCandidature(btn.dataset.planifier, "entretien");
+        window.location.reload();
+      });
+    });
+  });
+</script>
+</body>
+</html>

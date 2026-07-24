@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer un compte — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Accueil</a></li>
+      <li><a href="offres.html">Offres de stage</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
+    </div>
+    <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+  </div>
+</header>
+
+<section class="section" style="padding-top:64px;">
+  <div class="container">
+    <form class="form-card form-wide" id="form-inscription" novalidate>
+      <h2 style="text-align:center; margin-bottom:6px;">Créer un compte</h2>
+      <p style="text-align:center; margin-bottom:28px;">Choisissez votre profil pour commencer.</p>
+
+      <div class="role-tabs">
+        <button type="button" class="role-tab active" data-role="etudiant">Étudiant</button>
+        <button type="button" class="role-tab" data-role="entreprise">Entreprise</button>
+      </div>
+
+      <div class="field">
+        <label for="email">Adresse e-mail</label>
+        <input type="email" id="email" name="email" placeholder="vous@exemple.com" required>
+      </div>
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" minlength="6" required>
+        <p class="hint">6 caractères minimum.</p>
+      </div>
+
+      <!-- Champs spécifiques étudiant -->
+      <div data-role-panel="etudiant">
+        <div class="field">
+          <label for="nom">Nom complet</label>
+          <input type="text" id="nom" name="nom" placeholder="Ex : Awa Ndiaye" required>
+        </div>
+        <div class="field">
+          <label for="niveau-etude">Niveau d'étude</label>
+          <select id="niveau-etude" name="niveau-etude">
+            <option value="licence1">Licence 1</option>
+            <option value="licence2">Licence 2</option>
+            <option value="licence3">Licence 3</option>
+            <option value="master1">Master 1</option>
+            <option value="master2">Master 2</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="universite">Université / École</label>
+          <input type="text" id="universite" name="universite" placeholder="Ex : UCAD, ESP, ISM...">
+        </div>
+        <div class="field">
+          <label for="domaine">Domaine d'études</label>
+          <select id="domaine" name="domaine">
+            <option value="informatique">Informatique</option>
+            <option value="marketing">Marketing</option>
+            <option value="rh">Ressources humaines</option>
+            <option value="gestion">Gestion / Comptabilité</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="competences">Compétences (séparées par une virgule)</label>
+          <input type="text" id="competences" name="competences" placeholder="JavaScript, gestion de projet, Excel...">
+        </div>
+        <div class="field">
+          <label for="cv-lien">Lien vers votre CV</label>
+          <input type="url" id="cv-lien" name="cv-lien" placeholder="Lien Google Drive, OneDrive...">
+          <p class="hint">Collez un lien de partage vers votre CV en ligne (Drive, OneDrive...).</p>
+        </div>
+        <div class="field">
+          <label>Vos disponibilités</label>
+          <p class="hint" style="margin-top:-4px; margin-bottom:10px;">
+            Cliquez sur les créneaux où vous êtes libre pour un stage. Les créneaux du soir sont réservés à vos cours.
+          </p>
+          <div data-availability-grid id="grille-dispo-inscription"></div>
+        </div>
+      </div>
+
+      <!-- Champs spécifiques entreprise -->
+      <div data-role-panel="entreprise" hidden>
+        <div class="field">
+          <label for="entreprise-nom">Nom de l'entreprise</label>
+          <input type="text" id="entreprise-nom" name="entreprise-nom" placeholder="Ex : Kalys Digital" required>
+        </div>
+        <div class="field">
+          <label for="secteur">Secteur d'activité</label>
+          <select id="secteur" name="secteur">
+            <option value="informatique">Informatique / Tech</option>
+            <option value="marketing">Marketing / Communication</option>
+            <option value="rh">Ressources humaines</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+      </div>
+
+      <p id="erreur-inscription" style="color:var(--danger); font-size:.85rem; display:none;"></p>
+
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top:8px;">Créer mon compte</button>
+      <p class="form-foot">
+        Déjà un compte ? <a href="connexion.html">Se connecter</a>
+      </p>
+    </form>
+  </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/app-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  const form = document.getElementById("form-inscription");
+  const erreur = document.getElementById("erreur-inscription");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    erreur.style.display = "none";
+
+    const role = document.querySelector(".role-tab.active").dataset.role;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    let profileData = {};
+
+    if (role === "etudiant") {
+      const grille = document.getElementById("grille-dispo-inscription");
+      profileData.nom = document.getElementById("nom").value.trim();
+      profileData.niveauEtude = document.getElementById("niveau-etude").value;
+      profileData.universite = document.getElementById("universite").value.trim();
+      profileData.domaine = document.getElementById("domaine").value;
+      profileData.competences = document.getElementById("competences").value
+        .split(",").map((c) => c.trim()).filter(Boolean);
+      profileData.cvLien = document.getElementById("cv-lien").value.trim();
+      profileData.disponibilites = getDisponibilites(grille);
+    } else {
+      const entrepriseNom = document.getElementById("entreprise-nom").value.trim();
+      profileData.nom = entrepriseNom;
+      profileData.entrepriseNom = entrepriseNom;
+      profileData.secteur = document.getElementById("secteur").value;
+    }
+
+    const bouton = form.querySelector("button[type=submit]");
+    bouton.disabled = true;
+    bouton.textContent = "Création en cours...";
+
+    try {
+      await inscrireUtilisateur(email, password, role, profileData);
+      const destinations = {
+        etudiant: "etudiant/dashboard.html",
+        entreprise: "entreprise/dashboard.html",
+      };
+      window.location.href = destinations[role];
+    } catch (err) {
+      console.error(err);
+      erreur.textContent = messageErreurAuth(err);
+      erreur.style.display = "block";
+      bouton.disabled = false;
+      bouton.textContent = "Créer mon compte";
+    }
+  });
+</script>
+</body>
+</html>

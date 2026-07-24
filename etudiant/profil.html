@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon profil — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <div class="nav-actions">
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong id="nom-etudiant-side">—</strong>Compte étudiant</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html">Tableau de bord</a></li>
+      <li><a href="../offres.html">Offres de stage</a></li>
+      <li><a href="profil.html" class="active">Mon profil</a></li>
+      <li><a href="candidatures.html">Mes candidatures</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>Mon profil</h2>
+        <p>Tenez vos informations à jour pour de meilleurs matchs.</p>
+      </div>
+    </div>
+
+    <form class="card" id="form-profil" style="max-width:640px; display:flex; flex-direction:column; gap:20px;">
+      <div class="field">
+        <label for="nom">Nom complet</label>
+        <input type="text" id="nom">
+      </div>
+      <div class="field">
+        <label for="domaine">Domaine d'études</label>
+        <select id="domaine">
+          <option value="informatique">Informatique</option>
+          <option value="marketing">Marketing</option>
+          <option value="rh">Ressources humaines</option>
+          <option value="gestion">Gestion / Comptabilité</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="competences">Compétences (séparées par une virgule)</label>
+        <input type="text" id="competences">
+      </div>
+      <div class="field">
+        <label for="cv">CV (PDF)</label>
+        <input type="text" id="cv" placeholder="CV_NomPrenom.pdf" disabled>
+        <p class="hint">L'upload de fichier sera activé avec Firebase Storage.</p>
+      </div>
+      <div class="field">
+        <label>Mes disponibilités</label>
+        <p class="hint" style="margin-top:-4px; margin-bottom:10px;">
+          Cliquez pour mettre à jour vos créneaux libres en journée.
+        </p>
+        <div data-availability-grid id="grille-dispo-profil"></div>
+      </div>
+      <p id="confirmation-profil" style="display:none; color:var(--success); font-weight:600;">✓ Profil mis à jour.</p>
+      <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Enregistrer les modifications</button>
+    </form>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  let uidCourant = null;
+
+  protegerPage(["etudiant"], "../connexion.html", (profil) => {
+    uidCourant = profil.uid;
+    document.getElementById("nom-etudiant-side").textContent = profil.nom;
+    document.getElementById("nom").value = profil.nom || "";
+    document.getElementById("domaine").value = profil.domaine || "informatique";
+    document.getElementById("competences").value = (profil.competences || []).join(", ");
+
+    // La grille est déjà construite par initAvailabilityGrids (DOMContentLoaded) ;
+    // on y pré-coche les créneaux existants une fois le profil chargé.
+    const grille = document.getElementById("grille-dispo-profil");
+    setDisponibilites(grille, profil.disponibilites);
+  });
+
+  document.getElementById("form-profil").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!uidCourant) return;
+
+    const grille = document.getElementById("grille-dispo-profil");
+    const donnees = {
+      nom: document.getElementById("nom").value.trim(),
+      domaine: document.getElementById("domaine").value,
+      competences: document.getElementById("competences").value.split(",").map((c) => c.trim()).filter(Boolean),
+      disponibilites: getDisponibilites(grille),
+    };
+
+    const bouton = e.target.querySelector("button[type=submit]");
+    bouton.disabled = true;
+    bouton.textContent = "Enregistrement...";
+
+    try {
+      await db.collection("utilisateurs").doc(uidCourant).update(donnees);
+      document.getElementById("confirmation-profil").style.display = "block";
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'enregistrement du profil.");
+    } finally {
+      bouton.disabled = false;
+      bouton.textContent = "Enregistrer les modifications";
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace étudiant — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <div class="nav-actions">
+      <span id="nom-etudiant-topbar" style="font-size:.85rem; color:var(--slate);"></span>
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user">
+      <strong id="nom-etudiant-side">—</strong>
+      Compte étudiant
+    </div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html" class="active">Tableau de bord</a></li>
+      <li><a href="../offres.html">Offres de stage</a></li>
+      <li><a href="profil.html">Mon profil</a></li>
+      <li><a href="candidatures.html">Mes candidatures</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2 id="titre-bonjour">Bonjour 👋</h2>
+        <p>Voici un résumé de votre recherche de stage.</p>
+      </div>
+      <a href="../offres.html" class="btn btn-amber">Voir les offres compatibles</a>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-candidatures">—</div>
+        <div class="stat-label">Candidatures envoyées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-entretiens">—</div>
+        <div class="stat-label">Entretiens prévus</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-offres-compatibles">—</div>
+        <div class="stat-label">Offres compatibles</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-meilleur-score">—</div>
+        <div class="stat-label">Meilleur score de match</div>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom:14px;">Offres recommandées pour vous</h3>
+    <div data-offer-list class="offer-grid">
+      <p class="hint">Chargement...</p>
+    </div>
+
+    <h3 style="margin-bottom:14px;">Suivi de votre dernière candidature</h3>
+    <div class="card" id="carte-derniere-candidature">
+      <p class="hint">Aucune candidature envoyée pour le moment.</p>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  protegerPage(["etudiant"], "../connexion.html", async (profil) => {
+    document.getElementById("nom-etudiant-topbar").textContent = `${profil.nom} · L3 ${profil.domaine || ""}`;
+    document.getElementById("nom-etudiant-side").textContent = profil.nom;
+    document.getElementById("titre-bonjour").textContent = `Bonjour ${profil.nom.split(" ")[0]} 👋`;
+
+    const [offresValidees, candidatures] = await Promise.all([
+      chargerOffresValidees(),
+      chargerCandidaturesEtudiant(profil.uid),
+    ]);
+
+    const offresAvecScore = offresValidees
+      .map((o) => ({ ...o, matchScore: calculerScoreMatch(o, profil) }))
+      .sort((a, b) => b.matchScore - a.matchScore);
+
+    const recommandees = offresAvecScore.slice(0, 4);
+    const list = document.querySelector("[data-offer-list]");
+    renderOffers(list, recommandees);
+    list.querySelectorAll("[data-postuler]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const offre = offresAvecScore.find((o) => o.id === btn.dataset.postuler);
+        btn.disabled = true;
+        btn.textContent = "Envoi...";
+        await postulerOffre(offre, profil, profil.uid);
+        window.location.reload();
+      });
+    });
+
+    document.getElementById("stat-candidatures").textContent = candidatures.length;
+    document.getElementById("stat-entretiens").textContent = candidatures.filter((c) => c.statut === "entretien").length;
+    document.getElementById("stat-offres-compatibles").textContent = offresAvecScore.filter((o) => o.matchScore >= 60).length;
+    const meilleurScore = offresAvecScore.length ? offresAvecScore[0].matchScore : 0;
+    document.getElementById("stat-meilleur-score").textContent = `${meilleurScore}%`;
+
+    const derniere = candidatures
+      .slice()
+      .sort((a, b) => (b.dateEnvoi?.seconds || 0) - (a.dateEnvoi?.seconds || 0))[0];
+
+    if (derniere) {
+      const etapes = ["envoyee", "vue", "entretien", "acceptee"];
+      const labels = { envoyee: "Envoyée", vue: "Vue", entretien: "Entretien", acceptee: "Réponse" };
+      const indexActuel = derniere.statut === "refusee" ? -1 : etapes.indexOf(derniere.statut);
+
+      document.getElementById("carte-derniere-candidature").innerHTML = `
+        <p style="margin-bottom:4px; font-weight:600; color:var(--ink);">${derniere.offreTitre} — ${derniere.entrepriseNom}</p>
+        ${derniere.statut === "refusee"
+          ? `<span class="badge badge-danger">Candidature refusée</span>`
+          : `<div class="status-track">
+              ${etapes.map((etape, i) => `
+                <div class="status-step ${i < indexActuel ? "done" : i === indexActuel ? "current" : ""}">
+                  <div class="status-dot"></div>
+                  <div class="status-label">${labels[etape]}</div>
+                </div>
+              `).join("")}
+            </div>`}
+      `;
+    }
+  });
+</script>
+</body>
+</html>

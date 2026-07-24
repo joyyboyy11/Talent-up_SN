@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistiques — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <div class="nav-actions">
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong>Équipe RH</strong>Compte administrateur</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html">Validation des offres</a></li>
+      <li><a href="statistiques.html" class="active">Statistiques</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>Statistiques de la plateforme</h2>
+        <p>Vue d'ensemble utile à présenter en soutenance.</p>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-etudiants">—</div>
+        <div class="stat-label">Étudiants inscrits</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-entreprises">—</div>
+        <div class="stat-label">Entreprises partenaires</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-candidatures">—</div>
+        <div class="stat-label">Candidatures envoyées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-stages">—</div>
+        <div class="stat-label">Stages obtenus</div>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom:14px;">Répartition des candidatures par statut</h3>
+    <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Statut</th><th>Nombre</th><th>Part</th></tr>
+      </thead>
+      <tbody id="corps-tableau-repartition">
+        <tr><td colspan="3">Chargement...</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  protegerPage(["admin"], "../connexion.html", async () => {
+    const stats = await chargerStatistiquesAdmin();
+
+    document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
+    document.getElementById("stat-entreprises").textContent = stats.nbEntreprises;
+    document.getElementById("stat-candidatures").textContent = stats.nbCandidatures;
+    document.getElementById("stat-stages").textContent = stats.nbStagesObtenus;
+
+    const total = stats.nbCandidatures || 1;
+    const parStatut = {};
+    stats.candidatures.forEach((c) => {
+      parStatut[c.statut] = (parStatut[c.statut] || 0) + 1;
+    });
+
+    const ordre = ["envoyee", "vue", "entretien", "acceptee", "refusee"];
+    const corps = document.getElementById("corps-tableau-repartition");
+    corps.innerHTML = stats.nbCandidatures
+      ? ordre.filter((s) => parStatut[s]).map((s) => `
+        <tr>
+          <td><span class="badge ${classeBadgeStatut(s)}">${libelleStatutCandidature(s)}</span></td>
+          <td>${parStatut[s]}</td>
+          <td>${Math.round((parStatut[s] / total) * 100)}%</td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="3">Aucune candidature enregistrée pour le moment.</td></tr>`;
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offres de stage — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Accueil</a></li>
+      <li><a href="offres.html" class="active">Offres de stage</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
+      <a href="inscription.html" class="btn btn-primary btn-sm">Créer un compte</a>
+    </div>
+    <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+  </div>
+</header>
+
+<section class="section" style="padding-top:48px;">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Offres</span>
+      <h2>Des stages compatibles avec vos horaires</h2>
+      <p id="texte-connexion-hint">Connectez-vous en tant qu'étudiant pour voir votre score de compatibilité personnalisé sur chaque offre.</p>
+    </div>
+
+    <div class="filters-bar">
+      <div class="field">
+        <label for="filtre-recherche">Recherche</label>
+        <input type="text" id="filtre-recherche" placeholder="Titre ou entreprise...">
+      </div>
+      <div class="field">
+        <label for="filtre-domaine">Domaine</label>
+        <select id="filtre-domaine">
+          <option value="">Tous les domaines</option>
+          <option value="informatique">Informatique</option>
+          <option value="marketing">Marketing</option>
+          <option value="rh">Ressources humaines</option>
+          <option value="gestion">Gestion / Comptabilité</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filtre-horaire">Horaires</label>
+        <select id="filtre-horaire">
+          <option value="">Tous les horaires</option>
+          <option value="jour">Journée uniquement</option>
+          <option value="flexible">Horaires flexibles</option>
+        </select>
+      </div>
+    </div>
+
+    <div data-offer-list class="offer-grid">
+      <p class="hint">Chargement des offres...</p>
+    </div>
+  </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/app-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  let offresCache = [];
+  let profilEtudiantConnecte = null;
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const list = document.querySelector("[data-offer-list]");
+    if (!list) return;
+
+    try {
+      offresCache = await chargerOffresValidees();
+    } catch (err) {
+      console.error(err);
+      list.innerHTML = `<div class="empty-state"><h3>Impossible de charger les offres</h3><p>Vérifiez la configuration Firebase (js/firebase-config.js).</p></div>`;
+      return;
+    }
+
+    const domaine = document.querySelector("#filtre-domaine");
+    const horaire = document.querySelector("#filtre-horaire");
+    const recherche = document.querySelector("#filtre-recherche");
+    [domaine, horaire, recherche].forEach((el) => el && el.addEventListener("input", afficherOffres));
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const doc = await db.collection("utilisateurs").doc(user.uid).get();
+        if (doc.exists && doc.data().role === "etudiant") {
+          profilEtudiantConnecte = { uid: user.uid, ...doc.data() };
+          document.getElementById("texte-connexion-hint").textContent =
+            "Voici votre score de compatibilité personnalisé sur chaque offre.";
+        }
+      }
+      afficherOffres();
+    });
+
+    function afficherOffres() {
+      const q = (recherche?.value || "").toLowerCase();
+      const filtrees = offresCache.filter((o) => {
+        const matchDomaine = !domaine?.value || o.domaine === domaine.value;
+        const matchHoraire = !horaire?.value || o.horaire === horaire.value;
+        const matchQ = !q || o.titre.toLowerCase().includes(q) || (o.entrepriseNom || "").toLowerCase().includes(q);
+        return matchDomaine && matchHoraire && matchQ;
+      }).map((o) => ({
+        ...o,
+        matchScore: profilEtudiantConnecte ? calculerScoreMatch(o, profilEtudiantConnecte) : undefined,
+      }));
+
+      renderOffers(list, filtrees, { afficherMatch: !!profilEtudiantConnecte });
+
+      list.querySelectorAll("[data-postuler]").forEach((btn) => {
+        btn.addEventListener("click", () => gererPostulation(btn.dataset.postuler));
+      });
+    }
+
+    async function gererPostulation(offreId) {
+      if (!auth.currentUser || !profilEtudiantConnecte) {
+        alert("Connectez-vous en tant qu'étudiant pour postuler.");
+        window.location.href = "connexion.html";
+        return;
+      }
+      const offre = offresCache.find((o) => o.id === offreId);
+      try {
+        await postulerOffre(offre, profilEtudiantConnecte, auth.currentUser.uid);
+        alert("Candidature envoyée !");
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de l'envoi de la candidature.");
+      }
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Publier une offre — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <div class="nav-actions">
+      <span id="nom-entreprise-topbar" style="font-size:.85rem; color:var(--slate);"></span>
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong id="nom-entreprise-side">—</strong>Compte entreprise</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html">Tableau de bord</a></li>
+      <li><a href="publier-offre.html" class="active">Publier une offre</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>Publier une offre de stage</h2>
+        <p>Votre offre sera visible après validation par notre équipe RH (24-48h).</p>
+      </div>
+    </div>
+
+    <form class="card" id="form-offre" style="max-width:640px; display:flex; flex-direction:column; gap:20px;">
+      <div class="field">
+        <label for="titre">Titre du poste</label>
+        <input type="text" id="titre" placeholder="Ex : Développeur web junior" required>
+      </div>
+      <div class="field">
+        <label for="domaine">Domaine</label>
+        <select id="domaine">
+          <option value="informatique">Informatique</option>
+          <option value="marketing">Marketing</option>
+          <option value="rh">Ressources humaines</option>
+          <option value="gestion">Gestion / Comptabilité</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="description">Description de la mission</label>
+        <textarea id="description" placeholder="Décrivez les missions, l'équipe, le contexte..." required></textarea>
+      </div>
+      <div class="field">
+        <label for="competences">Compétences requises (séparées par une virgule)</label>
+        <input type="text" id="competences" placeholder="JavaScript, React, Git...">
+      </div>
+      <div class="field">
+        <label for="duree">Durée du stage</label>
+        <select id="duree">
+          <option>1 mois</option>
+          <option selected>3 mois</option>
+          <option>6 mois</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="horaire">Compatibilité horaire</label>
+        <select id="horaire">
+          <option value="jour">Journée uniquement (recommandé pour cours du soir)</option>
+          <option value="flexible">Horaires flexibles</option>
+        </select>
+        <p class="hint">Ce critère détermine quels étudiants verront votre offre en priorité.</p>
+      </div>
+      <p id="erreur-offre" style="color:var(--danger); font-size:.85rem; display:none;"></p>
+      <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Soumettre pour validation</button>
+      <p id="confirmation-offre" style="display:none; color:var(--success); font-weight:600;">
+        ✓ Offre envoyée à l'équipe RH pour validation.
+      </p>
+    </form>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  let profilCourant = null;
+
+  protegerPage(["entreprise"], "../connexion.html", (profil) => {
+    profilCourant = profil;
+    document.getElementById("nom-entreprise-topbar").textContent = profil.entrepriseNom || profil.nom;
+    document.getElementById("nom-entreprise-side").textContent = profil.entrepriseNom || profil.nom;
+  });
+
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  const form = document.getElementById("form-offre");
+  const erreur = document.getElementById("erreur-offre");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    erreur.style.display = "none";
+    if (!profilCourant) return;
+
+    const donnees = {
+      titre: document.getElementById("titre").value.trim(),
+      domaine: document.getElementById("domaine").value,
+      description: document.getElementById("description").value.trim(),
+      competences: document.getElementById("competences").value.split(",").map((c) => c.trim()).filter(Boolean),
+      duree: document.getElementById("duree").value,
+      horaire: document.getElementById("horaire").value,
+    };
+
+    const bouton = form.querySelector("button[type=submit]");
+    bouton.disabled = true;
+    bouton.textContent = "Envoi en cours...";
+
+    try {
+      await creerOffre(profilCourant.uid, profilCourant.entrepriseNom || profilCourant.nom, donnees);
+      document.getElementById("confirmation-offre").style.display = "block";
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      erreur.textContent = "Erreur lors de l'envoi de l'offre. Réessayez.";
+      erreur.style.display = "block";
+    } finally {
+      bouton.disabled = false;
+      bouton.textContent = "Soumettre pour validation";
+    }
+  });
+</script>
+</body>
+</html>
