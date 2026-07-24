@@ -11,23 +11,34 @@ document.addEventListener("DOMContentLoaded", () => {
   initAvailabilityGrids();
 });
 
-/* ---------- Menu mobile ---------- */
+/* ---------- Menu mobile (drawer, voir css/style.css) ---------- */
 function initNavToggle() {
   const toggle = document.querySelector(".nav-toggle");
   const links = document.querySelector(".nav-links");
   if (!toggle || !links) return;
+
+  const setOpen = (open) => {
+    links.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+    document.body.style.overflow = open ? "hidden" : "";
+  };
+
   toggle.addEventListener("click", () => {
-    const open = links.style.display === "flex";
-    links.style.display = open ? "none" : "flex";
-    links.style.flexDirection = "column";
-    links.style.position = "absolute";
-    links.style.top = "72px";
-    links.style.left = "0";
-    links.style.right = "0";
-    links.style.background = "#fff";
-    links.style.padding = "16px 24px";
-    links.style.borderBottom = "1px solid var(--line)";
-    toggle.setAttribute("aria-expanded", String(!open));
+    setOpen(!links.classList.contains("is-open"));
+  });
+
+  links.querySelectorAll("a").forEach((a) => {
+    a.addEventListener("click", () => setOpen(false));
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") setOpen(false);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!links.classList.contains("is-open")) return;
+    if (links.contains(e.target) || toggle.contains(e.target)) return;
+    setOpen(false);
   });
 }
 
