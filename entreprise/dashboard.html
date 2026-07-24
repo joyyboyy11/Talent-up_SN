@@ -151,10 +151,17 @@
           <div class="tag-row">
             <span class="badge ${classeBadgeStatut(c.statut)}">${libelleStatutCandidature(c.statut)}</span>
           </div>
-          <div>
-            <button class="btn btn-ghost btn-sm" data-planifier="${c.id}" ${c.statut === "entretien" || c.statut === "acceptee" ? "disabled" : ""}>
-              Planifier un entretien
-            </button>
+          <div class="tag-row">
+            ${
+              c.statut === "entretien"
+                ? `
+                  <button class="btn btn-primary btn-sm" data-accepter="${c.id}">Accepter</button>
+                  <button class="btn btn-danger-ghost btn-sm" data-refuser="${c.id}">Refuser</button>
+                `
+                : c.statut === "acceptee" || c.statut === "refusee"
+                ? ""
+                : `<button class="btn btn-ghost btn-sm" data-planifier="${c.id}">Planifier un entretien</button>`
+            }
           </div>
         </div>
       `).join("")
@@ -165,6 +172,26 @@
         btn.disabled = true;
         btn.textContent = "Mise à jour...";
         await mettreAJourStatutCandidature(btn.dataset.planifier, "entretien");
+        window.location.reload();
+      });
+    });
+
+    listeCandidatures.querySelectorAll("[data-accepter]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const conteneur = btn.closest("div");
+        conteneur.querySelectorAll("button").forEach((b) => (b.disabled = true));
+        btn.textContent = "Mise à jour...";
+        await mettreAJourStatutCandidature(btn.dataset.accepter, "acceptee");
+        window.location.reload();
+      });
+    });
+
+    listeCandidatures.querySelectorAll("[data-refuser]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const conteneur = btn.closest("div");
+        conteneur.querySelectorAll("button").forEach((b) => (b.disabled = true));
+        btn.textContent = "Mise à jour...";
+        await mettreAJourStatutCandidature(btn.dataset.refuser, "refusee");
         window.location.reload();
       });
     });
