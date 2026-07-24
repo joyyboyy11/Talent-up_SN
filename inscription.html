@@ -88,9 +88,9 @@
         <div class="field">
           <label>Vos disponibilités</label>
           <p class="hint" style="margin-top:-4px; margin-bottom:10px;">
-            Cliquez sur les créneaux où vous êtes libre pour un stage. Les créneaux du soir sont réservés à vos cours.
+            Ajoutez vos créneaux libres pour un stage (jour + heure de début/fin, entre 8h et 16h). Les créneaux du soir sont réservés à vos cours.
           </p>
-          <div data-availability-grid id="grille-dispo-inscription"></div>
+          <div data-availability-list id="dispo-inscription"></div>
         </div>
       </div>
 
@@ -143,7 +143,7 @@
     let profileData = {};
 
     if (role === "etudiant") {
-      const grille = document.getElementById("grille-dispo-inscription");
+      const grille = document.getElementById("dispo-inscription");
       profileData.nom = document.getElementById("nom").value.trim();
       profileData.niveauEtude = document.getElementById("niveau-etude").value;
       profileData.universite = document.getElementById("universite").value.trim();

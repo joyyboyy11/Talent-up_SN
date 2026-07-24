@@ -8,7 +8,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   initNavToggle();
   initRoleTabs();
-  initAvailabilityGrids();
+  initAvailabilityLists();
 });
 
 /* ---------- Menu mobile (drawer, voir css/style.css) ---------- */
@@ -58,90 +58,146 @@ function initRoleTabs() {
   });
 }
 
-/* ---------- Grille de disponibilité (élément signature) ----------
-   Chaque cellule représente un créneau de 2h en journée, du lundi
-   au samedi. Les créneaux du soir sont grisés et non cliquables
-   car réservés aux cours. Cliquer bascule "disponible / non".
-   Chaque cellule porte data-jour / data-heure pour pouvoir lire ou
-   pré-remplir la sélection depuis Firestore (voir getDisponibilites
-   / setDisponibilites plus bas). */
-const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-const CRENEAUX = ["8h", "10h", "12h", "14h", "16h", "18h"];
+/* ---------- Disponibilités (élément signature) ----------
+   Remplace l'ancienne grille horaire par un formulaire "ajouter un
+   créneau" : l'étudiant choisit un jour + une heure de début/fin
+   (entre 8h et 16h — les cours du soir ont lieu de 16h à 18h et
+   restent donc indisponibles), puis retrouve ses créneaux dans une
+   liste qu'il peut compléter ou vider créneau par créneau.
+   Chaque conteneur garde son état courant dans `container._slots`
+   (tableau d'objets { jour, debut, fin }) ; voir getDisponibilites
+   / setDisponibilites plus bas pour la lecture/écriture Firestore. */
+const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+const HEURE_MIN = "08:00";
+const HEURE_MAX = "16:00";
 
-function initAvailabilityGrids() {
-  document.querySelectorAll("[data-availability-grid]").forEach((el) => {
-    if (!el.hasAttribute("data-built")) buildGrid(el);
+const EXEMPLE_DISPONIBILITES = [
+  { jour: "Lundi", debut: "08:00", fin: "12:00" },
+  { jour: "Mercredi", debut: "14:00", fin: "16:00" },
+  { jour: "Vendredi", debut: "08:00", fin: "13:00" },
+];
+
+function initAvailabilityLists() {
+  document.querySelectorAll("[data-availability-list]").forEach((el) => {
+    if (!el.hasAttribute("data-built")) buildAvailabilityList(el);
   });
 }
 
-function buildGrid(container) {
-  const readOnly = container.hasAttribute("data-readonly");
-  const grid = document.createElement("div");
-  grid.className = "avail-grid";
+function formatHeure(heure) {
+  return heure.replace(":", "h");
+}
 
-  grid.appendChild(document.createElement("div")); // coin vide
-  JOURS.forEach((j) => {
-    const d = document.createElement("div");
-    d.className = "cell-day";
-    d.textContent = j;
-    grid.appendChild(d);
+function trierCreneaux(slots) {
+  return [...slots].sort((a, b) => {
+    const diffJour = JOURS.indexOf(a.jour) - JOURS.indexOf(b.jour);
+    return diffJour !== 0 ? diffJour : a.debut.localeCompare(b.debut);
   });
+}
 
-  CRENEAUX.forEach((heure, row) => {
-    const label = document.createElement("div");
-    label.className = "cell-label";
-    label.textContent = heure;
-    grid.appendChild(label);
+function renderAvailabilityList(container) {
+  const liste = container.querySelector(".dispo-list");
+  const vide = container.querySelector(".dispo-empty");
+  const slots = trierCreneaux(container._slots || []);
 
-    JOURS.forEach((jour) => {
-      const cell = document.createElement("button");
-      cell.type = "button";
-      const isEvening = row === CRENEAUX.length - 1; // créneau 18h = cours du soir
-      cell.className = "avail-cell" + (isEvening ? " evening" : "");
-      cell.dataset.jour = jour;
-      cell.dataset.heure = heure;
-      cell.setAttribute("aria-label", `${jour} ${heure}`);
-      if (isEvening) {
-        cell.disabled = true;
-        cell.title = "Cours du soir";
-      } else if (!readOnly) {
-        cell.addEventListener("click", () => cell.classList.toggle("on"));
-      } else {
-        // aperçu en lecture seule (page d'accueil) : exemple pré-rempli
-        if (Math.random() > 0.55) cell.classList.add("on");
+  liste.innerHTML = slots
+    .map(
+      (slot, index) => `
+    <li class="dispo-item" data-index="${index}">
+      <span>${slot.jour} · ${formatHeure(slot.debut)} – ${formatHeure(slot.fin)}</span>
+      ${
+        container.hasAttribute("data-readonly")
+          ? ""
+          : `<button type="button" class="dispo-remove" data-index="${index}" aria-label="Supprimer ce créneau">×</button>`
       }
-      grid.appendChild(cell);
-    });
-  });
+    </li>`
+    )
+    .join("");
 
-  container.innerHTML = "";
-  container.setAttribute("data-built", "true");
-  container.appendChild(grid);
+  vide.style.display = slots.length ? "none" : "block";
+}
 
-  const legend = document.createElement("div");
-  legend.className = "avail-legend";
-  legend.innerHTML = `
-    <span><span class="legend-swatch" style="background:var(--amber)"></span>Disponible</span>
-    <span><span class="legend-swatch" style="background:var(--line)"></span>Libre non sélectionné</span>
-    <span><span class="legend-swatch" style="background:var(--ink-soft);opacity:.5"></span>Cours du soir</span>
+function buildAvailabilityList(container) {
+  const readOnly = container.hasAttribute("data-readonly");
+  container._slots = readOnly ? EXEMPLE_DISPONIBILITES : [];
+
+  const optionsJours = JOURS.map((j) => `<option value="${j}">${j}</option>`).join("");
+
+  container.innerHTML = `
+    <div class="dispo-widget">
+      ${
+        readOnly
+          ? ""
+          : `<div class="dispo-form">
+              <div class="dispo-form-field">
+                <label>Jour</label>
+                <select class="dispo-jour">${optionsJours}</select>
+              </div>
+              <div class="dispo-form-field">
+                <label>De</label>
+                <input type="time" class="dispo-debut" value="${HEURE_MIN}" min="${HEURE_MIN}" max="${HEURE_MAX}" step="1800">
+              </div>
+              <div class="dispo-form-field">
+                <label>À</label>
+                <input type="time" class="dispo-fin" value="12:00" min="${HEURE_MIN}" max="${HEURE_MAX}" step="1800">
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm dispo-add">+ Ajouter</button>
+            </div>
+            <p class="dispo-error" style="display:none; color:var(--danger); font-size:.8rem; margin:6px 0 0;"></p>`
+      }
+      <ul class="dispo-list"></ul>
+      <p class="dispo-empty hint" style="margin:8px 0 0;">Aucun créneau ajouté pour le moment.</p>
+    </div>
   `;
-  container.appendChild(legend);
-}
+  container.setAttribute("data-built", "true");
+  renderAvailabilityList(container);
 
-/** Lit la sélection courante d'une grille : renvoie ["Lun-8h", "Mar-10h", ...] */
-function getDisponibilites(container) {
-  return Array.from(container.querySelectorAll(".avail-cell.on")).map(
-    (cell) => `${cell.dataset.jour}-${cell.dataset.heure}`
-  );
-}
+  if (readOnly) return;
 
-/** Pré-coche une grille à partir d'une liste ["Lun-8h", ...] (ex: profil chargé depuis Firestore) */
-function setDisponibilites(container, disponibilites) {
-  const set = new Set(disponibilites || []);
-  container.querySelectorAll(".avail-cell:not(.evening)").forEach((cell) => {
-    const key = `${cell.dataset.jour}-${cell.dataset.heure}`;
-    cell.classList.toggle("on", set.has(key));
+  const erreur = container.querySelector(".dispo-error");
+  const afficherErreur = (message) => {
+    erreur.textContent = message;
+    erreur.style.display = "block";
+  };
+
+  container.querySelector(".dispo-add").addEventListener("click", () => {
+    erreur.style.display = "none";
+    const jour = container.querySelector(".dispo-jour").value;
+    const debut = container.querySelector(".dispo-debut").value;
+    const fin = container.querySelector(".dispo-fin").value;
+
+    if (!debut || !fin) return afficherErreur("Choisissez une heure de début et de fin.");
+    if (debut >= fin) return afficherErreur("L'heure de fin doit être après l'heure de début.");
+    if (debut < HEURE_MIN || fin > HEURE_MAX) {
+      return afficherErreur("Les créneaux doivent être compris entre 8h et 16h (les cours du soir ont lieu de 16h à 18h).");
+    }
+    const existeDeja = container._slots.some(
+      (s) => s.jour === jour && s.debut === debut && s.fin === fin
+    );
+    if (existeDeja) return afficherErreur("Ce créneau est déjà dans votre liste.");
+
+    container._slots.push({ jour, debut, fin });
+    renderAvailabilityList(container);
   });
+
+  container.querySelector(".dispo-list").addEventListener("click", (e) => {
+    const bouton = e.target.closest(".dispo-remove");
+    if (!bouton) return;
+    const slots = trierCreneaux(container._slots);
+    slots.splice(Number(bouton.dataset.index), 1);
+    container._slots = slots;
+    renderAvailabilityList(container);
+  });
+}
+
+/** Lit la sélection courante : renvoie [{ jour, debut, fin }, ...] */
+function getDisponibilites(container) {
+  return trierCreneaux(container._slots || []);
+}
+
+/** Recharge une liste à partir de créneaux sauvegardés (ex: profil Firestore) */
+function setDisponibilites(container, disponibilites) {
+  container._slots = disponibilites || [];
+  renderAvailabilityList(container);
 }
 
 /* ---------- Rendu générique d'une liste d'offres ----------

@@ -65,9 +65,9 @@
       <div class="field">
         <label>Mes disponibilités</label>
         <p class="hint" style="margin-top:-4px; margin-bottom:10px;">
-          Cliquez pour mettre à jour vos créneaux libres en journée.
+          Ajoutez ou retirez vos créneaux libres en journée (entre 8h et 16h).
         </p>
-        <div data-availability-grid id="grille-dispo-profil"></div>
+        <div data-availability-list id="dispo-profil"></div>
       </div>
       <p id="confirmation-profil" style="display:none; color:var(--success); font-weight:600;">✓ Profil mis à jour.</p>
       <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Enregistrer les modifications</button>
@@ -97,9 +97,9 @@
     document.getElementById("domaine").value = profil.domaine || "informatique";
     document.getElementById("competences").value = (profil.competences || []).join(", ");
 
-    // La grille est déjà construite par initAvailabilityGrids (DOMContentLoaded) ;
-    // on y pré-coche les créneaux existants une fois le profil chargé.
-    const grille = document.getElementById("grille-dispo-profil");
+    // Le composant est déjà construit par initAvailabilityLists (DOMContentLoaded) ;
+    // on y recharge les créneaux existants une fois le profil chargé.
+    const grille = document.getElementById("dispo-profil");
     setDisponibilites(grille, profil.disponibilites);
   });
 
@@ -107,7 +107,7 @@
     e.preventDefault();
     if (!uidCourant) return;
 
-    const grille = document.getElementById("grille-dispo-profil");
+    const grille = document.getElementById("dispo-profil");
     const donnees = {
       nom: document.getElementById("nom").value.trim(),
       domaine: document.getElementById("domaine").value,
