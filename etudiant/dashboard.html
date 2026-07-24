@@ -126,22 +126,29 @@
       .sort((a, b) => (b.dateEnvoi?.seconds || 0) - (a.dateEnvoi?.seconds || 0))[0];
 
     if (derniere) {
-      const etapes = ["envoyee", "vue", "entretien", "acceptee"];
-      const labels = { envoyee: "Envoyée", vue: "Vue", entretien: "Entretien", acceptee: "Réponse" };
-      const indexActuel = derniere.statut === "refusee" ? -1 : etapes.indexOf(derniere.statut);
+      const etapes = ["envoyee", "vue", "entretien"];
+      const labels = { envoyee: "Envoyée", vue: "Vue", entretien: "Entretien" };
+      const indexActuel = etapes.indexOf(derniere.statut);
 
-      document.getElementById("carte-derniere-candidature").innerHTML = `
-        <p style="margin-bottom:4px; font-weight:600; color:var(--ink);">${derniere.offreTitre} — ${derniere.entrepriseNom}</p>
-        ${derniere.statut === "refusee"
-          ? `<span class="badge badge-danger">Candidature refusée</span>`
-          : `<div class="status-track">
+      let contenuStatut;
+      if (derniere.statut === "acceptee") {
+        contenuStatut = `<span class="badge badge-success">🎉 Candidature acceptée</span>`;
+      } else if (derniere.statut === "refusee") {
+        contenuStatut = `<span class="badge badge-danger">Candidature refusée</span>`;
+      } else {
+        contenuStatut = `<div class="status-track">
               ${etapes.map((etape, i) => `
                 <div class="status-step ${i < indexActuel ? "done" : i === indexActuel ? "current" : ""}">
                   <div class="status-dot"></div>
                   <div class="status-label">${labels[etape]}</div>
                 </div>
               `).join("")}
-            </div>`}
+            </div>`;
+      }
+
+      document.getElementById("carte-derniere-candidature").innerHTML = `
+        <p style="margin-bottom:4px; font-weight:600; color:var(--ink);">${derniere.offreTitre} — ${derniere.entrepriseNom}</p>
+        ${contenuStatut}
       `;
     }
   });
