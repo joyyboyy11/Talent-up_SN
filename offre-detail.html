@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Détail de l'offre — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Accueil</a></li>
+      <li><a href="offres.html" class="active">Offres de stage</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
+      <a href="inscription.html" class="btn btn-primary btn-sm">Créer un compte</a>
+    </div>
+    <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<section class="section" style="padding-top:48px;">
+  <div class="container">
+    <p style="margin-bottom:20px;"><a href="offres.html" style="color:var(--dusk); font-weight:600;">← Retour aux offres</a></p>
+
+    <div id="etat-chargement" class="card">
+      <p class="hint">Chargement de l'offre...</p>
+    </div>
+
+    <div id="detail-offre" style="display:none;">
+      <div class="section-head" style="margin-bottom:24px;">
+        <span class="eyebrow" id="detail-entreprise">Entreprise</span>
+        <h2 id="detail-titre">Titre du poste</h2>
+        <div class="tag-row" id="detail-tags" style="margin-top:12px;"></div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:24px; align-items:flex-start;">
+        <div class="card">
+          <h3 style="margin-top:0;">Description de la mission</h3>
+          <p id="detail-description" style="white-space:pre-line; color:var(--slate);"></p>
+
+          <h3>Compétences requises</h3>
+          <div class="tag-row" id="detail-competences"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">Récapitulatif</h3>
+          <p style="margin:0 0 10px;"><strong>Durée :</strong> <span id="detail-duree"></span></p>
+          <p style="margin:0 0 10px;"><strong>Horaires :</strong> <span id="detail-horaire"></span></p>
+          <p style="margin:0 0 20px;"><strong>Domaine :</strong> <span id="detail-domaine"></span></p>
+          <div id="detail-match-bloc" style="display:none; margin-bottom:16px;">
+            <span class="offer-match" id="detail-match-score"></span>
+          </div>
+          <p id="detail-connexion-hint" class="hint" style="margin-bottom:14px;">
+            Connectez-vous en tant qu'étudiant pour voir votre score de compatibilité et postuler.
+          </p>
+          <button class="btn btn-primary btn-block" id="btn-postuler" data-offer-id="">Postuler</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="etat-erreur" class="card" style="display:none;">
+      <h3>Offre introuvable</h3>
+      <p>Cette offre n'existe pas, a été retirée, ou n'est pas encore accessible publiquement.</p>
+      <a href="offres.html" class="btn btn-ghost btn-sm">Voir toutes les offres</a>
+    </div>
+  </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/app-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  let offreCourante = null;
+  let profilEtudiantConnecte = null;
+  let dejaPostule = false;
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const params = new URLSearchParams(window.location.search);
+    const offreId = params.get("id");
+
+    const chargement = document.getElementById("etat-chargement");
+    const contenu = document.getElementById("detail-offre");
+    const erreur = document.getElementById("etat-erreur");
+
+    if (!offreId) {
+      chargement.style.display = "none";
+      erreur.style.display = "block";
+      return;
+    }
+
+    try {
+      const doc = await db.collection("offres").doc(offreId).get();
+      if (!doc.exists) {
+        chargement.style.display = "none";
+        erreur.style.display = "block";
+        return;
+      }
+      offreCourante = { id: doc.id, ...doc.data() };
+    } catch (err) {
+      console.error(err);
+      chargement.style.display = "none";
+      erreur.style.display = "block";
+      return;
+    }
+
+    afficherOffre(offreCourante);
+    chargement.style.display = "none";
+    contenu.style.display = "block";
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) return;
+      const doc = await db.collection("utilisateurs").doc(user.uid).get();
+      if (!doc.exists || doc.data().role !== "etudiant") return;
+
+      profilEtudiantConnecte = { uid: user.uid, ...doc.data() };
+      dejaPostule = await aDejaPostule(user.uid, offreCourante.id);
+
+      const score = calculerScoreMatch(offreCourante, profilEtudiantConnecte);
+      document.getElementById("detail-match-bloc").style.display = "block";
+      document.getElementById("detail-match-score").textContent = `${score}% compatible`;
+      document.getElementById("detail-connexion-hint").style.display = "none";
+
+      const bouton = document.getElementById("btn-postuler");
+      if (dejaPostule) {
+        bouton.textContent = "✓ Déjà postulé";
+        bouton.disabled = true;
+        bouton.classList.remove("btn-primary");
+        bouton.classList.add("btn-ghost");
+      }
+    });
+
+    document.getElementById("btn-postuler").addEventListener("click", async () => {
+      if (!auth.currentUser || !profilEtudiantConnecte) {
+        window.location.href = "connexion.html";
+        return;
+      }
+      if (dejaPostule) return;
+
+      const bouton = document.getElementById("btn-postuler");
+      bouton.disabled = true;
+      bouton.textContent = "Envoi...";
+      try {
+        await postulerOffre(offreCourante, profilEtudiantConnecte, auth.currentUser.uid);
+        dejaPostule = true;
+        bouton.textContent = "✓ Déjà postulé";
+        bouton.classList.remove("btn-primary");
+        bouton.classList.add("btn-ghost");
+        alert("Candidature envoyée !");
+      } catch (err) {
+        console.error(err);
+        if (err.message === "candidature-existante") {
+          dejaPostule = true;
+          bouton.textContent = "✓ Déjà postulé";
+          bouton.classList.remove("btn-primary");
+          bouton.classList.add("btn-ghost");
+          alert("Vous avez déjà postulé à cette offre.");
+        } else {
+          alert("Erreur lors de l'envoi de la candidature.");
+          bouton.disabled = false;
+          bouton.textContent = "Postuler";
+        }
+      }
+    });
+  });
+
+  function afficherOffre(o) {
+    document.title = `${o.titre} — WouttKheuyy`;
+    document.getElementById("detail-entreprise").textContent = o.entrepriseNom || "Entreprise";
+    document.getElementById("detail-titre").textContent = o.titre;
+    document.getElementById("detail-description").textContent = o.description || "Aucune description fournie.";
+    document.getElementById("detail-duree").textContent = o.duree || "—";
+    document.getElementById("detail-horaire").textContent = labelHoraire(o.horaire);
+    document.getElementById("detail-domaine").textContent = o.domaine || "—";
+    document.getElementById("btn-postuler").dataset.offerId = o.id;
+
+    document.getElementById("detail-tags").innerHTML = `
+      <span class="tag">${labelHoraire(o.horaire)}</span>
+      <span class="tag">${o.duree || ""}</span>
+    `;
+
+    document.getElementById("detail-competences").innerHTML = (o.competences || []).length
+      ? o.competences.map((c) => `<span class="tag">${c}</span>`).join("")
+      : `<span class="hint">Aucune compétence spécifique renseignée.</span>`;
+  }
+</script>
+</body>
+</html>

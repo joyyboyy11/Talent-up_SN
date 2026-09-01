@@ -72,7 +72,19 @@ function calculerScoreMatch(offre, profilEtudiant) {
 
 /* ---------- Candidatures ---------- */
 
+async function aDejaPostule(etudiantId, offreId) {
+  const snap = await db.collection("candidatures")
+    .where("etudiantId", "==", etudiantId)
+    .where("offreId", "==", offreId)
+    .limit(1)
+    .get();
+  return !snap.empty;
+}
+
 async function postulerOffre(offre, profilEtudiant, etudiantId) {
+  if (await aDejaPostule(etudiantId, offre.id)) {
+    throw new Error("candidature-existante");
+  }
   const score = calculerScoreMatch(offre, profilEtudiant);
   return db.collection("candidatures").add({
     offreId: offre.id,

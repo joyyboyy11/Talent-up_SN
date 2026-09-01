@@ -75,6 +75,7 @@
 <script>
   let offresCache = [];
   let profilEtudiantConnecte = null;
+  let offresPostuleesIds = new Set();
 
   document.addEventListener("DOMContentLoaded", async () => {
     const list = document.querySelector("[data-offer-list]");
@@ -100,6 +101,8 @@
           profilEtudiantConnecte = { uid: user.uid, ...doc.data() };
           document.getElementById("texte-connexion-hint").textContent =
             "Voici votre score de compatibilité personnalisé sur chaque offre.";
+          const candidatures = await chargerCandidaturesEtudiant(user.uid);
+          offresPostuleesIds = new Set(candidatures.map((c) => c.offreId));
         }
       }
       afficherOffres();
@@ -117,7 +120,7 @@
         matchScore: profilEtudiantConnecte ? calculerScoreMatch(o, profilEtudiantConnecte) : undefined,
       }));
 
-      renderOffers(list, filtrees, { afficherMatch: !!profilEtudiantConnecte });
+      renderOffers(list, filtrees, { afficherMatch: !!profilEtudiantConnecte, offresPostuleesIds });
 
       list.querySelectorAll("[data-postuler]").forEach((btn) => {
         btn.addEventListener("click", () => gererPostulation(btn.dataset.postuler));
@@ -130,13 +133,25 @@
         window.location.href = "connexion.html";
         return;
       }
+      if (offresPostuleesIds.has(offreId)) {
+        alert("Vous avez déjà postulé à cette offre.");
+        return;
+      }
       const offre = offresCache.find((o) => o.id === offreId);
       try {
         await postulerOffre(offre, profilEtudiantConnecte, auth.currentUser.uid);
+        offresPostuleesIds.add(offreId);
+        afficherOffres();
         alert("Candidature envoyée !");
       } catch (err) {
         console.error(err);
-        alert("Erreur lors de l'envoi de la candidature.");
+        if (err.message === "candidature-existante") {
+          offresPostuleesIds.add(offreId);
+          afficherOffres();
+          alert("Vous avez déjà postulé à cette offre.");
+        } else {
+          alert("Erreur lors de l'envoi de la candidature.");
+        }
       }
     }
   });

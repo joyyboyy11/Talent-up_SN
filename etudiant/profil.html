@@ -45,6 +45,21 @@
         <input type="text" id="nom">
       </div>
       <div class="field">
+        <label for="niveau-etude">Niveau d'étude</label>
+        <select id="niveau-etude">
+          <option value="licence1">Licence 1</option>
+          <option value="licence2">Licence 2</option>
+          <option value="licence3">Licence 3</option>
+          <option value="master1">Master 1</option>
+          <option value="master2">Master 2</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="universite">Université / École</label>
+        <input type="text" id="universite" placeholder="Ex : UCAD, ESP, ISM...">
+      </div>
+      <div class="field">
         <label for="domaine">Domaine d'études</label>
         <select id="domaine">
           <option value="informatique">Informatique</option>
@@ -58,9 +73,9 @@
         <input type="text" id="competences">
       </div>
       <div class="field">
-        <label for="cv">CV (PDF)</label>
-        <input type="text" id="cv" placeholder="CV_NomPrenom.pdf" disabled>
-        <p class="hint">L'upload de fichier sera activé avec Firebase Storage.</p>
+        <label for="cv-lien">Lien vers votre CV</label>
+        <input type="url" id="cv-lien" placeholder="Lien Google Drive, OneDrive...">
+        <p class="hint">Collez un lien de partage vers votre CV en ligne (Drive, OneDrive...).</p>
       </div>
       <div class="field">
         <label>Mes disponibilités</label>
@@ -94,8 +109,11 @@
     uidCourant = profil.uid;
     document.getElementById("nom-etudiant-side").textContent = profil.nom;
     document.getElementById("nom").value = profil.nom || "";
+    document.getElementById("niveau-etude").value = profil.niveauEtude || "licence3";
+    document.getElementById("universite").value = profil.universite || "";
     document.getElementById("domaine").value = profil.domaine || "informatique";
     document.getElementById("competences").value = (profil.competences || []).join(", ");
+    document.getElementById("cv-lien").value = profil.cvLien || "";
 
     // Le composant est déjà construit par initAvailabilityLists (DOMContentLoaded) ;
     // on y recharge les créneaux existants une fois le profil chargé.
@@ -110,8 +128,11 @@
     const grille = document.getElementById("dispo-profil");
     const donnees = {
       nom: document.getElementById("nom").value.trim(),
+      niveauEtude: document.getElementById("niveau-etude").value,
+      universite: document.getElementById("universite").value.trim(),
       domaine: document.getElementById("domaine").value,
       competences: document.getElementById("competences").value.split(",").map((c) => c.trim()).filter(Boolean),
+      cvLien: document.getElementById("cv-lien").value.trim(),
       disponibilites: getDisponibilites(grille),
     };
 

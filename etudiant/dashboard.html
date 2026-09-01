@@ -102,16 +102,29 @@
       .map((o) => ({ ...o, matchScore: calculerScoreMatch(o, profil) }))
       .sort((a, b) => b.matchScore - a.matchScore);
 
+    const offresPostuleesIds = new Set(candidatures.map((c) => c.offreId));
     const recommandees = offresAvecScore.slice(0, 4);
     const list = document.querySelector("[data-offer-list]");
-    renderOffers(list, recommandees);
+    renderOffers(list, recommandees, { offresPostuleesIds, detailLinkPrefix: "../" });
     list.querySelectorAll("[data-postuler]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const offre = offresAvecScore.find((o) => o.id === btn.dataset.postuler);
         btn.disabled = true;
         btn.textContent = "Envoi...";
-        await postulerOffre(offre, profil, profil.uid);
-        window.location.reload();
+        try {
+          await postulerOffre(offre, profil, profil.uid);
+          window.location.reload();
+        } catch (err) {
+          console.error(err);
+          if (err.message === "candidature-existante") {
+            alert("Vous avez déjà postulé à cette offre.");
+            window.location.reload();
+          } else {
+            alert("Erreur lors de l'envoi de la candidature.");
+            btn.disabled = false;
+            btn.textContent = "Postuler";
+          }
+        }
       });
     });
 

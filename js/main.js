@@ -206,7 +206,7 @@ function setDisponibilites(container, disponibilites) {
    duree, matchScore? }. Si afficherActions est true, les boutons
    Postuler/Détail sont ajoutés avec data-offer-id pour être branchés
    par la page appelante. */
-function renderOffers(list, offres, { afficherMatch = true } = {}) {
+function renderOffers(list, offres, { afficherMatch = true, offresPostuleesIds = new Set(), detailLinkPrefix = "" } = {}) {
   if (!offres.length) {
     list.innerHTML = `<div class="empty-state"><h3>Aucune offre ne correspond</h3><p>Essayez d'élargir vos filtres, notamment sur les horaires.</p></div>`;
     return;
@@ -215,7 +215,7 @@ function renderOffers(list, offres, { afficherMatch = true } = {}) {
     <div class="offer-card">
       <div class="offer-top">
         <div>
-          <h3 style="margin-bottom:2px">${o.titre}</h3>
+          <h3 style="margin-bottom:2px"><a href="${detailLinkPrefix}offre-detail.html?id=${o.id}" style="color:inherit; text-decoration:none;">${o.titre}</a></h3>
           <p style="margin:0">${o.entrepriseNom || ""}</p>
         </div>
         ${afficherMatch && typeof o.matchScore === "number"
@@ -227,8 +227,11 @@ function renderOffers(list, offres, { afficherMatch = true } = {}) {
         <span class="tag">${labelHoraire(o.horaire)}</span>
         <span class="tag">${o.duree || ""}</span>
       </div>
-      <div>
-        <button class="btn btn-primary btn-sm" data-postuler="${o.id}">Postuler</button>
+      <div class="tag-row">
+        <a href="${detailLinkPrefix}offre-detail.html?id=${o.id}" class="btn btn-ghost btn-sm">Détails</a>
+        ${offresPostuleesIds.has(o.id)
+          ? `<button class="btn btn-ghost btn-sm" disabled>✓ Déjà postulé</button>`
+          : `<button class="btn btn-primary btn-sm" data-postuler="${o.id}">Postuler</button>`}
       </div>
     </div>
   `).join("");

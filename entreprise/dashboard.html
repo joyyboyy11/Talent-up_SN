@@ -138,6 +138,15 @@
       .sort((a, b) => (b.dateEnvoi?.seconds || 0) - (a.dateEnvoi?.seconds || 0))
       .slice(0, 6);
 
+    // Dès que l'entreprise consulte une candidature "Envoyée", on la marque
+    // "Vue" (comme un accusé de lecture) — l'étudiant voit alors sa
+    // candidature progresser dans son suivi de statut.
+    const aMarquerVue = dernieresCandidatures.filter((c) => c.statut === "envoyee");
+    if (aMarquerVue.length) {
+      await Promise.all(aMarquerVue.map((c) => mettreAJourStatutCandidature(c.id, "vue")));
+      aMarquerVue.forEach((c) => (c.statut = "vue"));
+    }
+
     listeCandidatures.innerHTML = dernieresCandidatures.length
       ? dernieresCandidatures.map((c) => `
         <div class="offer-card">
