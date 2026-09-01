@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connexion — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Accueil</a></li>
+      <li><a href="offres.html">Offres de stage</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="inscription.html" class="btn btn-primary btn-sm">Créer un compte</a>
+    </div>
+    <button class="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<section class="section" style="padding-top:64px;">
+  <div class="container">
+    <form class="form-card" id="form-connexion" novalidate>
+      <h2 style="text-align:center; margin-bottom:6px;">Connexion</h2>
+      <p style="text-align:center; margin-bottom:28px;">Retrouvez votre espace en un instant. Votre rôle (étudiant, entreprise, admin) est reconnu automatiquement.</p>
+
+      <div class="field">
+        <label for="email">Adresse e-mail</label>
+        <input type="email" id="email" name="email" placeholder="vous@exemple.com" required>
+      </div>
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required>
+      </div>
+      <p id="erreur-connexion" style="color:var(--danger); font-size:.85rem; display:none;">
+        Adresse e-mail ou mot de passe incorrect.
+      </p>
+
+      <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
+      <p class="form-foot">
+        Pas encore de compte ? <a href="inscription.html">Créer un compte</a>
+      </p>
+    </form>
+  </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth-service.js"></script>
+<script src="js/app-data.js"></script>
+<script src="js/main.js"></script>
+<script>
+  const form = document.getElementById("form-connexion");
+  const erreur = document.getElementById("erreur-connexion");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    erreur.style.display = "none";
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const bouton = form.querySelector("button[type=submit]");
+    bouton.disabled = true;
+    bouton.textContent = "Connexion...";
+
+    try {
+      const profil = await connecterUtilisateur(email, password);
+      const destinations = {
+        etudiant: "etudiant/dashboard.html",
+        entreprise: "entreprise/dashboard.html",
+        admin: "admin/dashboard.html",
+      };
+      window.location.href = destinations[profil.role] || "index.html";
+    } catch (err) {
+      console.error(err);
+      erreur.textContent = err.message === "profil-introuvable"
+        ? "Compte trouvé mais aucun profil associé. Contactez l'administrateur."
+        : messageErreurAuth(err);
+      erreur.style.display = "block";
+      bouton.disabled = false;
+      bouton.textContent = "Se connecter";
+    }
+  });
+</script>
+</body>
+</html>

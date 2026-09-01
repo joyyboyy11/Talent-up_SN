@@ -1,0 +1,79 @@
+rules_version = "2";
+
+// =============================================================
+// Regles de securite Firestore - StagePasse
+// A coller dans : Firebase Console > Firestore Database > Rules
+// =============================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Fonctions utilitaires ----------
+    function estConnecte() {
+      return request.auth != null;
+    }
+
+    function profilExiste() {
+      return exists(/databases/$(database)/documents/utilisateurs/$(request.auth.uid));
+    }
+
+    function monRole() {
+      return profilExiste()
+        ? get(/databases/$(database)/documents/utilisateurs/$(request.auth.uid)).data.role
+        : "invite";
+    }
+
+    function estAdmin() {
+      return estConnecte() && monRole() == "admin";
+    }
+
+    // ---------- Collection utilisateurs ----------
+    match /utilisateurs/{userId} {
+      allow read: if estConnecte() && (request.auth.uid == userId || estAdmin());
+
+      allow create: if estConnecte() && request.auth.uid == userId;
+
+      allow update: if estConnecte() && request.auth.uid == userId
+                    && (
+                      !("role" in resource.data) ||
+                      !("role" in request.resource.data) ||
+                      request.resource.data.role == resource.data.role
+                    );
+
+      allow update, delete: if estAdmin();
+    }
+
+    // ---------- Collection offres ----------
+    match /offres/{offreId} {
+      allow read: if resource.data.statut == "validee"
+                  || (estConnecte() && request.auth.uid == resource.data.entrepriseId)
+                  || estAdmin();
+
+      allow create: if estConnecte() && monRole() == "entreprise"
+                    && request.resource.data.entrepriseId == request.auth.uid
+                    && request.resource.data.statut == "en_attente";
+
+      allow update: if estAdmin()
+                    || (estConnecte() && request.auth.uid == resource.data.entrepriseId
+                        && request.resource.data.statut == resource.data.statut);
+
+      allow delete: if estAdmin() || (estConnecte() && request.auth.uid == resource.data.entrepriseId);
+    }
+
+    // ---------- Collection candidatures ----------
+    match /candidatures/{candidatureId} {
+      allow read: if estConnecte() &&
+                  (request.auth.uid == resource.data.etudiantId
+                   || request.auth.uid == resource.data.entrepriseId
+                   || estAdmin());
+
+      allow create: if estConnecte() && monRole() == "etudiant"
+                    && request.resource.data.etudiantId == request.auth.uid
+                    && request.resource.data.statut == "envoyee";
+
+      allow update: if estAdmin()
+                    || (estConnecte() && request.auth.uid == resource.data.entrepriseId);
+
+      allow delete: if estAdmin();
+    }
+  }
+}

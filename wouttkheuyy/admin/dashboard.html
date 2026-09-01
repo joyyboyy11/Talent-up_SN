@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace admin / RH — WouttKheuyy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>WouttKheuyy</a>
+    <div class="nav-actions">
+      <span style="font-size:.85rem; color:var(--slate);">Équipe RH</span>
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong>Équipe RH</strong>Compte administrateur</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html" class="active">Validation des offres</a></li>
+      <li><a href="statistiques.html">Statistiques</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>Offres en attente de validation</h2>
+        <p>Vérifiez la cohérence de chaque offre avant publication.</p>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-en-attente">—</div>
+        <div class="stat-label">En attente</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-validees">—</div>
+        <div class="stat-label">Offres validées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-refusees">—</div>
+        <div class="stat-label">Offres refusées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-etudiants">—</div>
+        <div class="stat-label">Étudiants inscrits</div>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Offre</th>
+          <th>Entreprise</th>
+          <th>Horaires</th>
+          <th>Statut</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="corps-tableau-validation">
+        <tr><td colspan="5">Chargement...</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  protegerPage(["admin"], "../connexion.html", async () => {
+    await chargerDonnees();
+  });
+
+  async function chargerDonnees() {
+    const [enAttente, stats] = await Promise.all([
+      chargerOffresEnAttente(),
+      chargerStatistiquesAdmin(),
+    ]);
+
+    document.getElementById("stat-en-attente").textContent = stats.nbOffresEnAttente;
+    document.getElementById("stat-validees").textContent = stats.nbOffresValidees;
+    document.getElementById("stat-refusees").textContent = stats.nbOffresRefusees;
+    document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
+
+    const corps = document.getElementById("corps-tableau-validation");
+    corps.innerHTML = enAttente.length
+      ? enAttente.map((o) => `
+        <tr data-offre-id="${o.id}">
+          <td>${o.titre}</td>
+          <td>${o.entrepriseNom || "—"}</td>
+          <td>${labelHoraire(o.horaire)}</td>
+          <td><span class="badge badge-warning">En attente</span></td>
+          <td>
+            <button class="btn btn-sm btn-primary" data-action="valider">Valider</button>
+            <button class="btn btn-sm btn-danger-ghost" data-action="refuser">Refuser</button>
+          </td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="5">Aucune offre en attente de validation.</td></tr>`;
+
+    corps.querySelectorAll("button[data-action]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const row = btn.closest("tr");
+        const offreId = row.dataset.offreId;
+        row.querySelectorAll("button[data-action]").forEach((b) => (b.disabled = true));
+        try {
+          if (btn.dataset.action === "valider") {
+            await validerOffre(offreId);
+          } else {
+            await refuserOffre(offreId);
+          }
+          row.remove();
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors de la mise à jour de l'offre.");
+          row.querySelectorAll("button[data-action]").forEach((b) => (b.disabled = false));
+        }
+      });
+    });
+  }
+</script>
+</body>
+</html>
