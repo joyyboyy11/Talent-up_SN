@@ -80,6 +80,22 @@
         </select>
       </div>
       <div class="field">
+        <label for="niveau-requis">Niveau d'étude requis</label>
+        <select id="niveau-requis">
+          <option value="">Tous niveaux</option>
+          <option value="licence1">Licence 1</option>
+          <option value="licence2">Licence 2</option>
+          <option value="licence3">Licence 3</option>
+          <option value="master1">Master 1</option>
+          <option value="master2">Master 2</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="date-limite">Date limite de candidature</label>
+        <input type="date" id="date-limite">
+        <p class="hint">Laissez vide si votre offre reste ouverte sans date de clôture.</p>
+      </div>
+      <div class="field">
         <label for="horaire">Compatibilité horaire</label>
         <select id="horaire">
           <option value="jour">Journée uniquement (recommandé pour cours du soir)</option>
@@ -131,6 +147,8 @@
       description: document.getElementById("description").value.trim(),
       competences: document.getElementById("competences").value.split(",").map((c) => c.trim()).filter(Boolean),
       duree: document.getElementById("duree").value,
+      niveauRequis: document.getElementById("niveau-requis").value,
+      dateLimite: document.getElementById("date-limite").value,
       horaire: document.getElementById("horaire").value,
     };
 

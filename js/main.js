@@ -211,7 +211,9 @@ function renderOffers(list, offres, { afficherMatch = true, offresPostuleesIds =
     list.innerHTML = `<div class="empty-state"><h3>Aucune offre ne correspond</h3><p>Essayez d'élargir vos filtres, notamment sur les horaires.</p></div>`;
     return;
   }
-  list.innerHTML = offres.map((o) => `
+  list.innerHTML = offres.map((o) => {
+    const expiree = offreExpiree(o);
+    return `
     <div class="offer-card">
       <div class="offer-top">
         <div>
@@ -226,17 +228,37 @@ function renderOffers(list, offres, { afficherMatch = true, offresPostuleesIds =
         ${(o.competences || []).slice(0, 3).map((c) => `<span class="tag">${c}</span>`).join("")}
         <span class="tag">${labelHoraire(o.horaire)}</span>
         <span class="tag">${o.duree || ""}</span>
+        ${o.niveauRequis ? `<span class="tag">${labelNiveau(o.niveauRequis)}</span>` : ""}
+        ${expiree ? `<span class="tag" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger-bg);">Candidatures closes</span>`
+          : o.dateLimite ? `<span class="tag">Avant le ${new Date(o.dateLimite + "T00:00:00").toLocaleDateString("fr-FR")}</span>` : ""}
       </div>
       <div class="tag-row">
         <a href="${detailLinkPrefix}offre-detail.html?id=${o.id}" class="btn btn-ghost btn-sm">Détails</a>
-        ${offresPostuleesIds.has(o.id)
-          ? `<button class="btn btn-ghost btn-sm" disabled>✓ Déjà postulé</button>`
-          : `<button class="btn btn-primary btn-sm" data-postuler="${o.id}">Postuler</button>`}
+        ${expiree
+          ? `<button class="btn btn-ghost btn-sm" disabled>Candidatures closes</button>`
+          : offresPostuleesIds.has(o.id)
+            ? `<button class="btn btn-ghost btn-sm" disabled>✓ Déjà postulé</button>`
+            : `<button class="btn btn-primary btn-sm" data-postuler="${o.id}">Postuler</button>`}
       </div>
     </div>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function labelHoraire(h) {
   return { jour: "Journée uniquement", flexible: "Horaires flexibles" }[h] || h;
+}
+
+function labelNiveau(n) {
+  return {
+    licence1: "Licence 1", licence2: "Licence 2", licence3: "Licence 3",
+    master1: "Master 1", master2: "Master 2",
+  }[n] || "Tous niveaux";
+}
+
+/** Une offre sans dateLimite reste ouverte indéfiniment. */
+function offreExpiree(o) {
+  if (!o.dateLimite) return false;
+  const limite = new Date(o.dateLimite + "T23:59:59");
+  return limite.getTime() < Date.now();
 }

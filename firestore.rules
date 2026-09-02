@@ -30,7 +30,8 @@ service cloud.firestore {
     match /utilisateurs/{userId} {
       allow read: if estConnecte() && (request.auth.uid == userId || estAdmin());
 
-      allow create: if estConnecte() && request.auth.uid == userId;
+      allow create: if estConnecte() && request.auth.uid == userId
+                    && request.resource.data.role in ["etudiant", "entreprise"];
 
       allow update: if estConnecte() && request.auth.uid == userId
                     && (
@@ -54,7 +55,8 @@ service cloud.firestore {
 
       allow update: if estAdmin()
                     || (estConnecte() && request.auth.uid == resource.data.entrepriseId
-                        && request.resource.data.statut == resource.data.statut);
+                        && request.resource.data.statut == resource.data.statut
+                        && request.resource.data.entrepriseId == resource.data.entrepriseId);
 
       allow delete: if estAdmin() || (estConnecte() && request.auth.uid == resource.data.entrepriseId);
     }
@@ -68,10 +70,14 @@ service cloud.firestore {
 
       allow create: if estConnecte() && monRole() == "etudiant"
                     && request.resource.data.etudiantId == request.auth.uid
-                    && request.resource.data.statut == "envoyee";
+                    && request.resource.data.statut == "envoyee"
+                    && exists(/databases/$(database)/documents/offres/$(request.resource.data.offreId))
+                    && get(/databases/$(database)/documents/offres/$(request.resource.data.offreId)).data.statut == "validee"
+                    && get(/databases/$(database)/documents/offres/$(request.resource.data.offreId)).data.entrepriseId == request.resource.data.entrepriseId;
 
       allow update: if estAdmin()
-                    || (estConnecte() && request.auth.uid == resource.data.entrepriseId);
+                    || (estConnecte() && request.auth.uid == resource.data.entrepriseId
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["statut"]));
 
       allow delete: if estAdmin();
     }

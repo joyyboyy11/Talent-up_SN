@@ -65,6 +65,7 @@
         <tr>
           <th>Offre</th>
           <th>Horaires demandés</th>
+          <th>Date limite</th>
           <th>Candidatures</th>
           <th>Statut</th>
         </tr>
@@ -126,11 +127,12 @@
         <tr>
           <td>${o.titre}</td>
           <td>${labelHoraire(o.horaire)}</td>
+          <td>${o.dateLimite ? new Date(o.dateLimite + "T00:00:00").toLocaleDateString("fr-FR") : "—"}${offreExpiree(o) ? ` <span class="badge badge-danger">Close</span>` : ""}</td>
           <td>${nbCandidaturesParOffre[o.id] || 0}</td>
           <td><span class="badge ${badgeParStatutOffre[o.statut] || "badge-neutral"}">${libelleParStatutOffre[o.statut] || o.statut}</span></td>
         </tr>
       `).join("")
-      : `<tr><td colspan="4">Aucune offre publiée pour le moment.</td></tr>`;
+      : `<tr><td colspan="5">Aucune offre publiée pour le moment.</td></tr>`;
 
     const listeCandidatures = document.getElementById("liste-candidatures");
     const dernieresCandidatures = candidatures

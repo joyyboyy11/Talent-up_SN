@@ -54,7 +54,9 @@
           <h3 style="margin-top:0;">Récapitulatif</h3>
           <p style="margin:0 0 10px;"><strong>Durée :</strong> <span id="detail-duree"></span></p>
           <p style="margin:0 0 10px;"><strong>Horaires :</strong> <span id="detail-horaire"></span></p>
-          <p style="margin:0 0 20px;"><strong>Domaine :</strong> <span id="detail-domaine"></span></p>
+          <p style="margin:0 0 10px;"><strong>Domaine :</strong> <span id="detail-domaine"></span></p>
+          <p style="margin:0 0 10px;"><strong>Niveau requis :</strong> <span id="detail-niveau"></span></p>
+          <p style="margin:0 0 20px;" id="detail-date-limite-bloc"><strong>Date limite :</strong> <span id="detail-date-limite"></span></p>
           <div id="detail-match-bloc" style="display:none; margin-bottom:16px;">
             <span class="offer-match" id="detail-match-score"></span>
           </div>
@@ -147,6 +149,10 @@
         return;
       }
       if (dejaPostule) return;
+      if (offreExpiree(offreCourante)) {
+        alert("Les candidatures pour cette offre sont closes.");
+        return;
+      }
 
       const bouton = document.getElementById("btn-postuler");
       bouton.disabled = true;
@@ -183,7 +189,22 @@
     document.getElementById("detail-duree").textContent = o.duree || "—";
     document.getElementById("detail-horaire").textContent = labelHoraire(o.horaire);
     document.getElementById("detail-domaine").textContent = o.domaine || "—";
+    document.getElementById("detail-niveau").textContent = labelNiveau(o.niveauRequis);
+    const blocDateLimite = document.getElementById("detail-date-limite-bloc");
+    if (o.dateLimite) {
+      document.getElementById("detail-date-limite").textContent = new Date(o.dateLimite + "T00:00:00").toLocaleDateString("fr-FR");
+    } else {
+      blocDateLimite.style.display = "none";
+    }
     document.getElementById("btn-postuler").dataset.offerId = o.id;
+
+    if (offreExpiree(o)) {
+      const bouton = document.getElementById("btn-postuler");
+      bouton.textContent = "Candidatures closes";
+      bouton.disabled = true;
+      bouton.classList.remove("btn-primary");
+      bouton.classList.add("btn-ghost");
+    }
 
     document.getElementById("detail-tags").innerHTML = `
       <span class="tag">${labelHoraire(o.horaire)}</span>

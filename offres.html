@@ -68,6 +68,17 @@
           <option value="flexible">Horaires flexibles</option>
         </select>
       </div>
+      <div class="field">
+        <label for="filtre-niveau">Niveau requis</label>
+        <select id="filtre-niveau">
+          <option value="">Tous niveaux</option>
+          <option value="licence1">Licence 1</option>
+          <option value="licence2">Licence 2</option>
+          <option value="licence3">Licence 3</option>
+          <option value="master1">Master 1</option>
+          <option value="master2">Master 2</option>
+        </select>
+      </div>
     </div>
 
     <div data-offer-list class="offer-grid">
@@ -102,8 +113,9 @@
 
     const domaine = document.querySelector("#filtre-domaine");
     const horaire = document.querySelector("#filtre-horaire");
+    const niveau = document.querySelector("#filtre-niveau");
     const recherche = document.querySelector("#filtre-recherche");
-    [domaine, horaire, recherche].forEach((el) => el && el.addEventListener("input", afficherOffres));
+    [domaine, horaire, niveau, recherche].forEach((el) => el && el.addEventListener("input", afficherOffres));
 
     auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -124,8 +136,9 @@
       const filtrees = offresCache.filter((o) => {
         const matchDomaine = !domaine?.value || o.domaine === domaine.value;
         const matchHoraire = !horaire?.value || o.horaire === horaire.value;
+        const matchNiveau = !niveau?.value || !o.niveauRequis || o.niveauRequis === niveau.value;
         const matchQ = !q || o.titre.toLowerCase().includes(q) || (o.entrepriseNom || "").toLowerCase().includes(q);
-        return matchDomaine && matchHoraire && matchQ;
+        return matchDomaine && matchHoraire && matchNiveau && matchQ;
       }).map((o) => ({
         ...o,
         matchScore: profilEtudiantConnecte ? calculerScoreMatch(o, profilEtudiantConnecte) : undefined,
@@ -149,6 +162,10 @@
         return;
       }
       const offre = offresCache.find((o) => o.id === offreId);
+      if (offre && offreExpiree(offre)) {
+        alert("Les candidatures pour cette offre sont closes.");
+        return;
+      }
       try {
         await postulerOffre(offre, profilEtudiantConnecte, auth.currentUser.uid);
         offresPostuleesIds.add(offreId);

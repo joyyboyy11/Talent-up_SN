@@ -43,6 +43,25 @@ function deconnecterUtilisateur(cheminConnexion) {
 }
 
 /**
+ * Envoie un e-mail de réinitialisation de mot de passe via Firebase Auth.
+ * Ne révèle jamais si l'adresse existe ou non (bonne pratique de sécurité) :
+ * l'appelant doit afficher le même message de confirmation dans tous les cas,
+ * sauf pour les erreurs de format d'e-mail ou de trop nombreuses tentatives.
+ * @param {string} email
+ */
+async function reinitialiserMotDePasse(email) {
+  try {
+    await auth.sendPasswordResetEmail(email);
+  } catch (err) {
+    // On ne remonte que les erreurs qui ne révèlent pas l'existence du compte.
+    if (err.code === "auth/invalid-email" || err.code === "auth/too-many-requests") {
+      throw err;
+    }
+    // auth/user-not-found (et autres) : on avale l'erreur silencieusement.
+  }
+}
+
+/**
  * Protège une page : redirige vers la connexion si personne n'est connecté,
  * ou si le rôle du profil ne fait pas partie des rôles autorisés.
  * Appelle callback(profil) une fois la vérification réussie.

@@ -38,7 +38,25 @@
       <div class="field">
         <label for="password">Mot de passe</label>
         <input type="password" id="password" name="password" placeholder="••••••••" required>
+        <p class="hint" style="margin-top:6px;">
+          <a href="#" id="lien-mdp-oublie">Mot de passe oublié ?</a>
+        </p>
       </div>
+
+      <div id="bloc-mdp-oublie" style="display:none; margin:-8px 0 20px; padding:16px; border:1px solid var(--line); border-radius:10px;">
+        <p class="hint" style="margin-bottom:10px;">
+          Indiquez votre adresse e-mail : nous vous envoyons un lien pour choisir un nouveau mot de passe.
+        </p>
+        <div class="field" style="margin-bottom:10px;">
+          <input type="email" id="email-mdp-oublie" placeholder="vous@exemple.com">
+        </div>
+        <button type="button" id="btn-mdp-oublie" class="btn btn-ghost btn-sm btn-block">Envoyer le lien</button>
+        <p id="confirmation-mdp-oublie" style="display:none; color:var(--success); font-size:.85rem; margin-top:10px;">
+          Si un compte existe avec cette adresse, un e-mail vient de vous être envoyé.
+        </p>
+        <p id="erreur-mdp-oublie" style="display:none; color:var(--danger); font-size:.85rem; margin-top:10px;"></p>
+      </div>
+
       <p id="erreur-connexion" style="color:var(--danger); font-size:.85rem; display:none;">
         Adresse e-mail ou mot de passe incorrect.
       </p>
@@ -88,6 +106,52 @@
       erreur.style.display = "block";
       bouton.disabled = false;
       bouton.textContent = "Se connecter";
+    }
+  });
+
+  /* ---------- Mot de passe oublié ---------- */
+  const lienMdpOublie = document.getElementById("lien-mdp-oublie");
+  const blocMdpOublie = document.getElementById("bloc-mdp-oublie");
+  const emailMdpOublie = document.getElementById("email-mdp-oublie");
+  const btnMdpOublie = document.getElementById("btn-mdp-oublie");
+  const confirmationMdpOublie = document.getElementById("confirmation-mdp-oublie");
+  const erreurMdpOublie = document.getElementById("erreur-mdp-oublie");
+
+  lienMdpOublie.addEventListener("click", (e) => {
+    e.preventDefault();
+    const ouvert = blocMdpOublie.style.display !== "none";
+    blocMdpOublie.style.display = ouvert ? "none" : "block";
+    confirmationMdpOublie.style.display = "none";
+    erreurMdpOublie.style.display = "none";
+    if (!ouvert) {
+      emailMdpOublie.value = document.getElementById("email").value.trim();
+      emailMdpOublie.focus();
+    }
+  });
+
+  btnMdpOublie.addEventListener("click", async () => {
+    confirmationMdpOublie.style.display = "none";
+    erreurMdpOublie.style.display = "none";
+
+    const email = emailMdpOublie.value.trim();
+    if (!email) {
+      erreurMdpOublie.textContent = "Merci de saisir votre adresse e-mail.";
+      erreurMdpOublie.style.display = "block";
+      return;
+    }
+
+    btnMdpOublie.disabled = true;
+    btnMdpOublie.textContent = "Envoi...";
+    try {
+      await reinitialiserMotDePasse(email);
+      confirmationMdpOublie.style.display = "block";
+    } catch (err) {
+      console.error(err);
+      erreurMdpOublie.textContent = messageErreurAuth(err);
+      erreurMdpOublie.style.display = "block";
+    } finally {
+      btnMdpOublie.disabled = false;
+      btnMdpOublie.textContent = "Envoyer le lien";
     }
   });
 </script>
