@@ -1,4 +1,4 @@
-# WouttKheuyy
+# Talent'up SN
 
 Plateforme web (HTML / CSS / JS vanilla + Firebase) mettant en relation des
 étudiants inscrits en cours du soir avec des entreprises proposant des
