@@ -97,6 +97,7 @@
             <option value="telecoms-reseaux">Télécoms – Réseaux</option>
             <option value="autre">Autre</option>
           </select>
+          <input type="text" id="domaine-autre" name="domaine-autre" placeholder="Précisez votre domaine d'études" hidden style="margin-top:8px;">
         </div>
         <div class="field">
           <label for="competences">Compétences (séparées par une virgule)</label>
@@ -121,18 +122,45 @@
             <option value="informatique">Informatique / Tech</option>
             <option value="marketing">Marketing / Communication</option>
             <option value="rh">Ressources humaines</option>
+            <option value="banque-finance-assurance">Banque – Finance – Assurance</option>
+            <option value="assurance">Assurance</option>
+            <option value="btp-construction">BTP – Construction</option>
+            <option value="commerce-general">Commerce – Distribution</option>
+            <option value="commerce-international">Commerce international / Import-Export</option>
+            <option value="agroalimentaire">Agroalimentaire</option>
+            <option value="industrie-production">Industrie – Production</option>
+            <option value="energie-environnement">Énergie – Environnement</option>
+            <option value="logistique-transport">Transport – Logistique</option>
+            <option value="hotellerie-tourisme">Hôtellerie – Tourisme</option>
+            <option value="restauration">Restauration</option>
+            <option value="immobilier">Immobilier</option>
+            <option value="sante">Santé</option>
+            <option value="education-formation">Éducation – Formation</option>
+            <option value="telecoms-reseaux">Télécoms – Réseaux</option>
+            <option value="audit">Audit – Conseil</option>
+            <option value="affaires-juridiques-fiscales">Juridique – Fiscal</option>
+            <option value="culture-evenementiel">Culture – Événementiel</option>
+            <option value="journalisme">Journalisme – Médias</option>
+            <option value="ong-developpement">ONG – Développement</option>
+            <option value="artisanat">Artisanat</option>
+            <option value="agriculture-peche">Agriculture – Pêche</option>
+            <option value="administration-publique">Administration publique</option>
             <option value="autre">Autre</option>
           </select>
+          <input type="text" id="secteur-autre" name="secteur-autre" placeholder="Précisez votre secteur d'activité" hidden style="margin-top:8px;">
         </div>
         <p class="hint">Après votre inscription, choisissez votre formule d'abonnement (Starter, Business ou Premium) depuis votre espace entreprise. <a href="entreprise/tarifs.html">Voir les tarifs</a>.</p>
       </div>
 
       <p id="erreur-inscription" style="color:var(--danger); font-size:.85rem; display:none;"></p>
 
+      <label style="display:flex; align-items:flex-start; gap:10px; font-size:.85rem; color:var(--slate); cursor:pointer;">
+        <input type="checkbox" id="consentement" required style="margin-top:3px;">
+        <span>J'accepte que mes données soient collectées et traitées par Talent'Up SN conformément à la
+          <a href="mentions-legales.html" target="_blank">politique de confidentialité</a>, dans le cadre de la mise en relation candidats/entreprises.</span>
+      </label>
+
       <button type="submit" class="btn btn-primary btn-block" style="margin-top:8px;">Créer mon compte</button>
-      <p class="hint" style="text-align:center; margin-top:10px;">
-        En créant un compte, vous acceptez notre <a href="mentions-legales.html">politique de confidentialité</a>.
-      </p>
       <p class="form-foot">
         Déjà un compte ? <a href="connexion.html">Se connecter</a>
       </p>
@@ -151,9 +179,38 @@
   const form = document.getElementById("form-inscription");
   const erreur = document.getElementById("erreur-inscription");
 
+  /** Affiche/masque le champ texte "Précisez..." quand l'option "autre" est choisie. */
+  function initSelectAvecAutre(selectId, autreId) {
+    const select = document.getElementById(selectId);
+    const autre = document.getElementById(autreId);
+    if (!select || !autre) return;
+    select.addEventListener("change", () => {
+      autre.hidden = select.value !== "autre";
+      autre.required = select.value === "autre";
+      if (select.value !== "autre") autre.value = "";
+    });
+  }
+  initSelectAvecAutre("domaine", "domaine-autre");
+  initSelectAvecAutre("secteur", "secteur-autre");
+
+  /** Retourne le texte libre si "autre" est sélectionné, sinon le libellé affiché de l'option. */
+  function valeurSelectAvecAutre(selectId, autreId) {
+    const select = document.getElementById(selectId);
+    if (select.value === "autre") {
+      return document.getElementById(autreId).value.trim() || "Autre";
+    }
+    return select.value;
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     erreur.style.display = "none";
+
+    if (!document.getElementById("consentement").checked) {
+      erreur.textContent = "Merci d'accepter la politique de confidentialité pour continuer.";
+      erreur.style.display = "block";
+      return;
+    }
 
     const role = document.querySelector(".role-tab.active").dataset.role;
     const email = document.getElementById("email").value.trim();
@@ -165,7 +222,7 @@
       profileData.nom = document.getElementById("nom").value.trim();
       profileData.niveauEtude = document.getElementById("niveau-etude").value;
       profileData.universite = document.getElementById("universite").value.trim();
-      profileData.domaine = document.getElementById("domaine").value;
+      profileData.domaine = valeurSelectAvecAutre("domaine", "domaine-autre");
       profileData.competences = document.getElementById("competences").value
         .split(",").map((c) => c.trim()).filter(Boolean);
       profileData.cvLien = document.getElementById("cv-lien").value.trim();
@@ -173,7 +230,7 @@
       const entrepriseNom = document.getElementById("entreprise-nom").value.trim();
       profileData.nom = entrepriseNom;
       profileData.entrepriseNom = entrepriseNom;
-      profileData.secteur = document.getElementById("secteur").value;
+      profileData.secteur = valeurSelectAvecAutre("secteur", "secteur-autre");
       profileData.abonnement = "aucun";
     }
 

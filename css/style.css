@@ -427,6 +427,4 @@ footer.site a:hover{ color:#fff; }
   .stats-row{ grid-template-columns:1fr 1fr; gap:10px; }
   .form-card{ padding:24px; }
   .hero-academic{ padding:60px 0 52px; }
-  .dispo-form{ flex-direction:column; align-items:stretch; }
-  .dispo-form .btn{ width:100%; }
 }

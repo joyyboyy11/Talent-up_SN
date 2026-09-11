@@ -90,6 +90,7 @@
           <option value="telecoms-reseaux">Télécoms – Réseaux</option>
           <option value="autre">Autre</option>
         </select>
+        <input type="text" id="domaine-autre" placeholder="Précisez votre domaine d'études" hidden style="margin-top:8px;">
       </div>
       <div class="field">
         <label for="competences">Compétences (séparées par une virgule)</label>
@@ -119,6 +120,14 @@
     deconnecterUtilisateur("../connexion.html");
   });
 
+  const selectDomaine = document.getElementById("domaine");
+  const inputDomaineAutre = document.getElementById("domaine-autre");
+  selectDomaine.addEventListener("change", () => {
+    inputDomaineAutre.hidden = selectDomaine.value !== "autre";
+    inputDomaineAutre.required = selectDomaine.value === "autre";
+    if (selectDomaine.value !== "autre") inputDomaineAutre.value = "";
+  });
+
   let uidCourant = null;
 
   protegerPage(["etudiant"], "../connexion.html", (profil) => {
@@ -127,7 +136,17 @@
     document.getElementById("nom").value = profil.nom || "";
     document.getElementById("niveau-etude").value = profil.niveauEtude || "licence";
     document.getElementById("universite").value = profil.universite || "";
-    document.getElementById("domaine").value = profil.domaine || "informatique";
+
+    const domaineEnregistre = profil.domaine || "informatique";
+    const optionExistante = [...selectDomaine.options].some((o) => o.value === domaineEnregistre);
+    if (optionExistante) {
+      selectDomaine.value = domaineEnregistre;
+    } else {
+      selectDomaine.value = "autre";
+      inputDomaineAutre.hidden = false;
+      inputDomaineAutre.value = domaineEnregistre;
+    }
+
     document.getElementById("competences").value = (profil.competences || []).join(", ");
     document.getElementById("cv-lien").value = profil.cvLien || "";
   });
@@ -136,11 +155,15 @@
     e.preventDefault();
     if (!uidCourant) return;
 
+    const domaine = selectDomaine.value === "autre"
+      ? (inputDomaineAutre.value.trim() || "Autre")
+      : selectDomaine.value;
+
     const donnees = {
       nom: document.getElementById("nom").value.trim(),
       niveauEtude: document.getElementById("niveau-etude").value,
       universite: document.getElementById("universite").value.trim(),
-      domaine: document.getElementById("domaine").value,
+      domaine,
       competences: document.getElementById("competences").value.split(",").map((c) => c.trim()).filter(Boolean),
       cvLien: document.getElementById("cv-lien").value.trim(),
     };

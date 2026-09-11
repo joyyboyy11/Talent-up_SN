@@ -19,7 +19,7 @@
       <li><a href="../offres.html">Offres d'emploi</a></li>
       <li><a href="tarifs.html" class="active">Tarifs entreprises</a></li>
     </ul>
-    <div class="nav-actions">
+    <div class="nav-actions" id="nav-actions">
       <a href="../connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
       <a href="../inscription.html" class="btn btn-primary btn-sm">Créer un compte</a>
     </div>
@@ -35,6 +35,8 @@
       <p>La plateforme reste gratuite pour les candidats. Les entreprises souscrivent un abonnement mensuel selon leurs besoins de recrutement. Une période d'essai gratuite peut être proposée aux premières entreprises partenaires.</p>
     </div>
 
+    <div id="statut-abonnement" style="display:none;" class="card"></div>
+
     <div class="cards-3" style="align-items:stretch;">
       <div class="card">
         <span class="eyebrow">Starter</span>
@@ -45,7 +47,7 @@
           <li>Accès limité à la CVthèque</li>
           <li>Présélection RH standard</li>
         </ul>
-        <a href="../inscription.html" class="btn btn-ghost btn-block">Choisir Starter</a>
+        <a href="../inscription.html" class="btn btn-ghost btn-block" data-plan-btn data-plan="starter">Choisir Starter</a>
       </div>
       <div class="card" style="border:2px solid var(--amber); position:relative;">
         <span class="badge badge-warning" style="position:absolute; top:16px; right:16px;">Offre de référence</span>
@@ -57,7 +59,7 @@
           <li>Accès complet à la CVthèque</li>
           <li>Présélection RH systématique</li>
         </ul>
-        <a href="../inscription.html" class="btn btn-amber btn-block">Choisir Business</a>
+        <a href="../inscription.html" class="btn btn-amber btn-block" data-plan-btn data-plan="business">Choisir Business</a>
       </div>
       <div class="card">
         <span class="eyebrow">Premium</span>
@@ -68,13 +70,30 @@
           <li>Présélection renforcée</li>
           <li>Mise en avant des offres et du profil recherché</li>
         </ul>
-        <a href="../inscription.html" class="btn btn-ghost btn-block">Choisir Premium</a>
+        <a href="../inscription.html" class="btn btn-ghost btn-block" data-plan-btn data-plan="premium">Choisir Premium</a>
       </div>
     </div>
 
     <p class="hint" style="margin-top:24px; text-align:center;">
       Des modules de formation et de coaching pour vos futures recrues peuvent aussi être proposés séparément, sur devis.
     </p>
+
+    <div class="section-head" style="margin-top:40px; margin-bottom:0;">
+      <span class="eyebrow">Autres formules</span>
+      <h2 style="font-size:1.5rem;">Un besoin ponctuel plutôt qu'un abonnement ?</h2>
+    </div>
+    <div class="cards-3" style="grid-template-columns:repeat(2,1fr); align-items:stretch; margin-top:20px;">
+      <div class="card">
+        <span class="eyebrow">Recrutement à la carte</span>
+        <h3 style="font-size:1.3rem; margin:6px 0 2px;">50 000 – 150 000 FCFA</h3>
+        <p style="color:var(--slate); margin-bottom:0;">Mission de recrutement ponctuelle, sans abonnement, selon le profil recherché.</p>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Formation / Coaching</span>
+        <h3 style="font-size:1.3rem; margin:6px 0 2px;">À partir de 5 000 FCFA</h3>
+        <p style="color:var(--slate); margin-bottom:0;">Modules individuels ou collectifs pour vos équipes ou vos futures recrues, vendus séparément.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -87,6 +106,78 @@
   </div>
 </footer>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
 <script src="../js/main.js"></script>
+<script>
+  const NOMS_PLANS = { starter: "Starter", business: "Business", premium: "Premium" };
+  let entrepriseConnectee = null;
+
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) return;
+    const doc = await db.collection("utilisateurs").doc(user.uid).get();
+    if (!doc.exists) return;
+
+    if (doc.data().role !== "entreprise") {
+      // Candidat ou admin connecté : montrer "Mon espace" au lieu de Connexion.
+      const destinations = { etudiant: "../etudiant/dashboard.html", admin: "../admin/dashboard.html" };
+      const chemin = destinations[doc.data().role];
+      if (chemin) afficherNavConnecte(chemin, doc.data().nom);
+      return;
+    }
+
+    entrepriseConnectee = { uid: user.uid, ...doc.data() };
+    afficherNavConnecte("dashboard.html", doc.data().nom);
+
+    const abonnementActuel = entrepriseConnectee.abonnement && entrepriseConnectee.abonnement !== "aucun"
+      ? entrepriseConnectee.abonnement : null;
+
+    const banniere = document.getElementById("statut-abonnement");
+    banniere.style.display = "block";
+    banniere.innerHTML = abonnementActuel
+      ? `<p style="margin:0;"><strong>Abonnement actuel : ${NOMS_PLANS[abonnementActuel] || abonnementActuel}.</strong> Choisissez une autre formule ci-dessous pour en changer.</p>`
+      : `<p style="margin:0;">Vous n'avez pas encore d'abonnement actif. Choisissez une formule ci-dessous.</p>`;
+
+    document.querySelectorAll("[data-plan-btn]").forEach((btn) => {
+      const plan = btn.dataset.plan;
+      btn.setAttribute("href", "#");
+      if (plan === abonnementActuel) {
+        btn.textContent = "✓ Formule actuelle";
+        btn.classList.add("btn-ghost");
+        btn.classList.remove("btn-amber", "btn-primary");
+      }
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (plan === abonnementActuel) return;
+        const libelle = NOMS_PLANS[plan] || plan;
+        if (!confirm(`Confirmer le passage à la formule ${libelle} ?`)) return;
+        btn.textContent = "Mise à jour...";
+        try {
+          await db.collection("utilisateurs").doc(entrepriseConnectee.uid).update({ abonnement: plan });
+          window.location.reload();
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors de la mise à jour de votre abonnement.");
+          btn.textContent = `Choisir ${libelle}`;
+        }
+      });
+    });
+  });
+
+  function afficherNavConnecte(cheminDashboard, nom) {
+    document.getElementById("nav-actions").innerHTML = `
+      <span style="font-size:.85rem; color:var(--slate);">${nom || "Mon compte"}</span>
+      <a href="${cheminDashboard}" class="btn btn-ghost btn-sm">Mon espace</a>
+      <a href="#" id="lien-deconnexion-tarifs" class="btn btn-primary btn-sm">Déconnexion</a>
+    `;
+    document.getElementById("lien-deconnexion-tarifs").addEventListener("click", (e) => {
+      e.preventDefault();
+      deconnecterUtilisateur("../connexion.html");
+    });
+  }
+</script>
 </body>
 </html>
