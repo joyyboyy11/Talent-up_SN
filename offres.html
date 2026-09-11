@@ -18,7 +18,7 @@
       <li><a href="index.html">Accueil</a></li>
       <li><a href="offres.html" class="active">Offres d'emploi</a></li>
     </ul>
-    <div class="nav-actions">
+    <div class="nav-actions" id="nav-actions">
       <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
       <a href="inscription.html" class="btn btn-primary btn-sm">Créer un compte</a>
     </div>
@@ -138,10 +138,25 @@
             "Voici votre score de compatibilité personnalisé sur chaque offre.";
           const candidatures = await chargerCandidaturesEtudiant(user.uid);
           offresPostuleesIds = new Set(candidatures.map((c) => c.offreId));
+          afficherNavConnecte("etudiant/dashboard.html", doc.data().nom);
+        } else if (doc.exists && doc.data().role === "entreprise") {
+          afficherNavConnecte("entreprise/dashboard.html", doc.data().nom);
         }
       }
       afficherOffres();
     });
+
+    function afficherNavConnecte(cheminDashboard, nom) {
+      document.getElementById("nav-actions").innerHTML = `
+        <span style="font-size:.85rem; color:var(--slate);">${nom || "Mon compte"}</span>
+        <a href="${cheminDashboard}" class="btn btn-ghost btn-sm">Mon espace</a>
+        <a href="#" id="lien-deconnexion-offres" class="btn btn-primary btn-sm">Déconnexion</a>
+      `;
+      document.getElementById("lien-deconnexion-offres").addEventListener("click", (e) => {
+        e.preventDefault();
+        deconnecterUtilisateur("connexion.html");
+      });
+    }
 
     function afficherOffres() {
       const q = (recherche?.value || "").toLowerCase();

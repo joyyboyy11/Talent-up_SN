@@ -8,6 +8,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   initNavToggle();
   initRoleTabs();
+  initAuthAwareNav();
 });
 
 /* ---------- Menu mobile (drawer, voir css/style.css) ---------- */
@@ -54,6 +55,52 @@ function initRoleTabs() {
         panel.hidden = panel.getAttribute("data-role-panel") !== target;
       });
     });
+  });
+}
+
+/* ---------- En-tête public conscient de la connexion ----------
+   Les pages "publiques" (accueil, offres, détail d'offre...) affichent par
+   défaut les boutons Connexion / Créer un compte, car elles sont aussi
+   consultées par des visiteurs non connectés. Mais un candidat ou une
+   entreprise déjà connecté(e) qui navigue vers ces pages depuis son espace
+   voyait ces mêmes boutons "visiteur" réapparaître, donnant l'impression
+   d'avoir été déconnecté(e) — alors que la session Firebase restait active.
+   Cette fonction détecte la connexion réelle et bascule l'en-tête vers
+   "Mon espace" / "Déconnexion" en conséquence. Elle ne fait rien si la page
+   ne charge pas Firebase (variable globale `auth` absente), ou si aucune
+   zone marquée data-nav-auth n'est présente. */
+function initAuthAwareNav() {
+  if (typeof auth === "undefined") return;
+  const zone = document.querySelector("[data-nav-auth]");
+  if (!zone) return;
+  const prefixe = zone.dataset.prefix || "";
+
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) return; // laisse les boutons Connexion / Créer un compte par défaut
+
+    try {
+      const doc = await db.collection("utilisateurs").doc(user.uid).get();
+      if (!doc.exists) return;
+
+      const cibles = {
+        etudiant: `${prefixe}etudiant/dashboard.html`,
+        entreprise: `${prefixe}entreprise/dashboard.html`,
+        admin: `${prefixe}admin/dashboard.html`,
+      };
+      const cible = cibles[doc.data().role];
+      if (!cible) return;
+
+      zone.innerHTML = `
+        <a href="${cible}" class="btn btn-ghost btn-sm">Mon espace</a>
+        <a href="#" class="btn btn-primary btn-sm" id="nav-deconnexion">Déconnexion</a>
+      `;
+      document.getElementById("nav-deconnexion").addEventListener("click", (e) => {
+        e.preventDefault();
+        deconnecterUtilisateur(`${prefixe}connexion.html`);
+      });
+    } catch (err) {
+      console.error("initAuthAwareNav:", err);
+    }
   });
 }
 

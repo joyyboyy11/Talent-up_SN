@@ -22,7 +22,7 @@
       <li><a href="#formation">Formation &amp; Coaching</a></li>
       <li><a href="entreprise/tarifs.html">Entreprises</a></li>
     </ul>
-    <div class="nav-actions">
+    <div class="nav-actions" id="nav-actions">
       <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
       <a href="inscription.html" class="btn btn-primary btn-sm">Créer un compte</a>
     </div>
@@ -159,6 +159,30 @@
   </div>
 </footer>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth-service.js"></script>
 <script src="js/main.js"></script>
+<script>
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) return;
+    const doc = await db.collection("utilisateurs").doc(user.uid).get();
+    if (!doc.exists) return;
+    const destinations = { etudiant: "etudiant/dashboard.html", entreprise: "entreprise/dashboard.html", admin: "admin/dashboard.html" };
+    const cheminDashboard = destinations[doc.data().role];
+    if (!cheminDashboard) return;
+    document.getElementById("nav-actions").innerHTML = `
+      <span style="font-size:.85rem; color:var(--slate);">${doc.data().nom || "Mon compte"}</span>
+      <a href="${cheminDashboard}" class="btn btn-ghost btn-sm">Mon espace</a>
+      <a href="#" id="lien-deconnexion-accueil" class="btn btn-primary btn-sm">Déconnexion</a>
+    `;
+    document.getElementById("lien-deconnexion-accueil").addEventListener("click", (e) => {
+      e.preventDefault();
+      deconnecterUtilisateur("connexion.html");
+    });
+  });
+</script>
 </body>
 </html>

@@ -18,7 +18,7 @@
       <li><a href="index.html">Accueil</a></li>
       <li><a href="offres.html" class="active">Offres d'emploi</a></li>
     </ul>
-    <div class="nav-actions">
+    <div class="nav-actions" id="nav-actions">
       <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
       <a href="inscription.html" class="btn btn-primary btn-sm">Créer un compte</a>
     </div>
@@ -123,8 +123,15 @@
     auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       const doc = await db.collection("utilisateurs").doc(user.uid).get();
-      if (!doc.exists || doc.data().role !== "etudiant") return;
+      if (!doc.exists) return;
 
+      if (doc.data().role === "entreprise") {
+        afficherNavConnecte("entreprise/dashboard.html", doc.data().nom);
+        return;
+      }
+      if (doc.data().role !== "etudiant") return;
+
+      afficherNavConnecte("etudiant/dashboard.html", doc.data().nom);
       profilCandidatConnecte = { uid: user.uid, ...doc.data() };
       dejaPostule = await aDejaPostule(user.uid, offreCourante.id);
 
@@ -141,6 +148,18 @@
         bouton.classList.add("btn-ghost");
       }
     });
+
+    function afficherNavConnecte(cheminDashboard, nom) {
+      document.getElementById("nav-actions").innerHTML = `
+        <span style="font-size:.85rem; color:var(--slate);">${nom || "Mon compte"}</span>
+        <a href="${cheminDashboard}" class="btn btn-ghost btn-sm">Mon espace</a>
+        <a href="#" id="lien-deconnexion-offre" class="btn btn-primary btn-sm">Déconnexion</a>
+      `;
+      document.getElementById("lien-deconnexion-offre").addEventListener("click", (e) => {
+        e.preventDefault();
+        deconnecterUtilisateur("connexion.html");
+      });
+    }
 
     document.getElementById("btn-postuler").addEventListener("click", async () => {
       if (!auth.currentUser || !profilCandidatConnecte) {
