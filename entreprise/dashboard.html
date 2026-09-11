@@ -27,7 +27,7 @@
     <ul class="app-nav">
       <li><a href="dashboard.html" class="active">Tableau de bord</a></li>
       <li><a href="publier-offre.html">Publier une offre</a></li>
-      <li><a href="cvtheque.html">CVthèque</a></li>
+      <li><a href="tarifs.html">Mon abonnement</a></li>
     </ul>
   </aside>
 
@@ -142,7 +142,7 @@
       .slice(0, 6);
 
     // Dès que l'entreprise consulte une candidature "Envoyée", on la marque
-    // "Vue" (comme un accusé de lecture) — le candidat voit alors sa
+    // "Vue" (comme un accusé de lecture) — l'étudiant voit alors sa
     // candidature progresser dans son suivi de statut.
     const aMarquerVue = dernieresCandidatures.filter((c) => c.statut === "envoyee");
     if (aMarquerVue.length) {
@@ -155,10 +155,10 @@
         <div class="offer-card">
           <div class="offer-top">
             <div>
-              <h3 style="margin-bottom:2px;">${c.candidatNom}</h3>
+              <h3 style="margin-bottom:2px;">${c.etudiantNom}</h3>
               <p style="margin:0;">${c.offreTitre}</p>
             </div>
-            <span class="offer-match">${c.matchScore}% de correspondance</span>
+            <span class="offer-match">${c.matchScore}% compatible</span>
           </div>
           <div class="tag-row">
             <span class="badge ${classeBadgeStatut(c.statut)}">${libelleStatutCandidature(c.statut)}</span>

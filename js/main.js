@@ -60,9 +60,9 @@ function initRoleTabs() {
 /* ---------- Rendu générique d'une liste d'offres ----------
    Utilisé par offres.html et les tableaux de bord. `offres` doit être
    un tableau d'objets { id, titre, entrepriseNom, competences[],
-   typeContrat, lieu, niveauRequis, matchScore? }. Si afficherActions
-   est true, les boutons Postuler/Détail sont ajoutés avec
-   data-offer-id pour être branchés par la page appelante. */
+   typeContrat, niveauRequis, matchScore? }. Si afficherActions est
+   true, les boutons Postuler/Détail sont ajoutés avec data-offer-id
+   pour être branchés par la page appelante. */
 function renderOffers(list, offres, { afficherMatch = true, offresPostuleesIds = new Set(), detailLinkPrefix = "" } = {}) {
   if (!offres.length) {
     list.innerHTML = `<div class="empty-state"><h3>Aucune offre ne correspond</h3><p>Essayez d'élargir vos filtres.</p></div>`;
@@ -78,13 +78,12 @@ function renderOffers(list, offres, { afficherMatch = true, offresPostuleesIds =
           <p style="margin:0">${o.entrepriseNom || ""}</p>
         </div>
         ${afficherMatch && typeof o.matchScore === "number"
-          ? `<span class="offer-match">${o.matchScore}% de correspondance</span>`
+          ? `<span class="offer-match">${o.matchScore}% compatible</span>`
           : ""}
       </div>
       <div class="tag-row">
         ${(o.competences || []).slice(0, 3).map((c) => `<span class="tag">${c}</span>`).join("")}
         <span class="tag">${labelContrat(o.typeContrat)}</span>
-        ${o.lieu ? `<span class="tag">${o.lieu}</span>` : ""}
         ${o.niveauRequis ? `<span class="tag">${labelNiveau(o.niveauRequis)}</span>` : ""}
         ${expiree ? `<span class="tag" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger-bg);">Candidatures closes</span>`
           : o.dateLimite ? `<span class="tag">Avant le ${new Date(o.dateLimite + "T00:00:00").toLocaleDateString("fr-FR")}</span>` : ""}
@@ -102,14 +101,15 @@ function renderOffers(list, offres, { afficherMatch = true, offresPostuleesIds =
   }).join("");
 }
 
-function labelContrat(c) {
-  return { cdi: "CDI", cdd: "CDD", freelance: "Freelance / Mission", alternance: "Alternance" }[c] || (c || "Non précisé");
+function labelContrat(t) {
+  return { stage: "Stage", cdd: "CDD", cdi: "CDI" }[t] || "Stage / CDD / CDI";
 }
 
 function labelNiveau(n) {
   return {
-    licence1: "Bac+1", licence2: "Bac+2", licence3: "Bac+3",
-    master1: "Bac+4", master2: "Bac+5",
+    bac2: "Bac+2", licence: "Licence (Bac+3)",
+    master1: "Master 1 (Bac+4)", master2: "Master 2 (Bac+5)",
+    ingenieur: "Ingénieur / Grande école",
   }[n] || "Tous niveaux";
 }
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Espace étudiant — Talent'up SN</title>
+<title>Espace candidat — Talent'Up SN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
@@ -13,7 +13,7 @@
 
 <header class="topbar">
   <div class="container">
-    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'up SN</a>
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
     <div class="nav-actions">
       <span id="nom-etudiant-topbar" style="font-size:.85rem; color:var(--slate);"></span>
       <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
@@ -25,13 +25,14 @@
   <aside class="app-side">
     <div class="app-side-user">
       <strong id="nom-etudiant-side">—</strong>
-      Compte étudiant
+      Compte candidat
     </div>
     <ul class="app-nav">
       <li><a href="dashboard.html" class="active">Tableau de bord</a></li>
-      <li><a href="../offres.html">Offres de stage</a></li>
+      <li><a href="../offres.html">Offres d'emploi</a></li>
       <li><a href="profil.html">Mon profil</a></li>
       <li><a href="candidatures.html">Mes candidatures</a></li>
+      <li><a href="formation.html">Formation &amp; Coaching</a></li>
     </ul>
   </aside>
 
@@ -39,9 +40,9 @@
     <div class="app-head">
       <div>
         <h2 id="titre-bonjour">Bonjour 👋</h2>
-        <p>Voici un résumé de votre recherche de stage.</p>
+        <p>Voici un résumé de votre recherche d'emploi.</p>
       </div>
-      <a href="../offres.html" class="btn btn-amber">Voir les offres compatibles</a>
+      <a href="../offres.html" class="btn btn-amber">Voir les offres recommandées</a>
     </div>
 
     <div class="stats-row">
@@ -89,7 +90,7 @@
   });
 
   protegerPage(["etudiant"], "../connexion.html", async (profil) => {
-    document.getElementById("nom-etudiant-topbar").textContent = `${profil.nom} · L3 ${profil.domaine || ""}`;
+    document.getElementById("nom-etudiant-topbar").textContent = `${profil.nom} · ${labelNiveau(profil.niveauEtude)}`;
     document.getElementById("nom-etudiant-side").textContent = profil.nom;
     document.getElementById("titre-bonjour").textContent = `Bonjour ${profil.nom.split(" ")[0]} 👋`;
 

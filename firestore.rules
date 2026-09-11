@@ -28,16 +28,10 @@ service cloud.firestore {
 
     // ---------- Collection utilisateurs ----------
     match /utilisateurs/{userId} {
-      // Un candidat/une entreprise lit son propre profil ; l'admin lit tout ;
-      // une entreprise peut aussi consulter les profils candidats (CVtheque).
-      allow read: if estConnecte() && (
-                    request.auth.uid == userId
-                    || estAdmin()
-                    || (monRole() == "entreprise" && resource.data.role == "candidat")
-                  );
+      allow read: if estConnecte() && (request.auth.uid == userId || estAdmin());
 
       allow create: if estConnecte() && request.auth.uid == userId
-                    && request.resource.data.role in ["candidat", "entreprise"];
+                    && request.resource.data.role in ["etudiant", "entreprise"];
 
       allow update: if estConnecte() && request.auth.uid == userId
                     && (
@@ -70,12 +64,12 @@ service cloud.firestore {
     // ---------- Collection candidatures ----------
     match /candidatures/{candidatureId} {
       allow read: if estConnecte() &&
-                  (request.auth.uid == resource.data.candidatId
+                  (request.auth.uid == resource.data.etudiantId
                    || request.auth.uid == resource.data.entrepriseId
                    || estAdmin());
 
-      allow create: if estConnecte() && monRole() == "candidat"
-                    && request.resource.data.candidatId == request.auth.uid
+      allow create: if estConnecte() && monRole() == "etudiant"
+                    && request.resource.data.etudiantId == request.auth.uid
                     && request.resource.data.statut == "envoyee"
                     && exists(/databases/$(database)/documents/offres/$(request.resource.data.offreId))
                     && get(/databases/$(database)/documents/offres/$(request.resource.data.offreId)).data.statut == "validee"
@@ -86,6 +80,18 @@ service cloud.firestore {
                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["statut"]));
 
       allow delete: if estAdmin();
+    }
+
+    // ---------- Collection demandesCoaching (module Formation & Coaching) ----------
+    match /demandesCoaching/{demandeId} {
+      allow read: if estConnecte() &&
+                  (request.auth.uid == resource.data.candidatId || estAdmin());
+
+      allow create: if estConnecte() && monRole() == "etudiant"
+                    && request.resource.data.candidatId == request.auth.uid
+                    && request.resource.data.statut == "nouvelle";
+
+      allow update, delete: if estAdmin();
     }
   }
 }

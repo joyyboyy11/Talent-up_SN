@@ -240,6 +240,10 @@ select:focus-visible, textarea:focus-visible{
 }
 .card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-2); }
 
+/* ---------- Pricing cards (tarifs entreprises) ---------- */
+.cards-3 .card ul{ font-size:.9rem; line-height:1.7; }
+.cards-3 .card h3{ color:var(--ink); }
+
 /* ---------- Status track ---------- */
 .status-track{ display:flex; align-items:center; gap:0; margin:20px 0; }
 .status-step{ flex:1; text-align:center; position:relative; }
@@ -374,26 +378,6 @@ tbody tr:hover{ background:#FAFBFD; }
 }
 .filters-bar .field{ margin-bottom:0; min-width:160px; }
 
-/* ---------- Grille tarifaire ---------- */
-.pricing-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; align-items:stretch; }
-.price-card{
-  background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-lg);
-  padding:30px; box-shadow:var(--shadow-1); display:flex; flex-direction:column;
-  transition:transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s ease;
-}
-.price-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-2); }
-.price-card.featured{ border-color:var(--amber); box-shadow:var(--shadow-amber); position:relative; }
-.price-card.featured::before{
-  content:"Formule de référence"; position:absolute; top:-13px; left:24px;
-  background:var(--amber); color:#4A3308; font-size:.7rem; font-weight:700;
-  padding:4px 12px; border-radius:100px; text-transform:uppercase; letter-spacing:.04em;
-}
-.price-amount{ font-family:var(--font-display); font-size:1.9rem; font-weight:700; color:var(--ink); margin:10px 0 4px; }
-.price-amount span{ font-size:.85rem; font-weight:500; color:var(--slate); }
-.price-list{ list-style:none; margin:18px 0 22px; padding:0; display:flex; flex-direction:column; gap:10px; flex:1; }
-.price-list li{ font-size:.88rem; color:var(--slate); padding-left:22px; position:relative; }
-.price-list li::before{ content:"✓"; position:absolute; left:0; color:var(--success); font-weight:700; }
-
 /* Footer */
 footer.site{ background:linear-gradient(180deg, var(--ink) 0%, var(--ink-deep) 100%); color:#9AA3C0; padding:52px 0 30px; margin-top:88px; border-top:4px solid var(--amber); }
 footer.site a{ color:#C7CCDC; text-decoration:none; transition:color .15s ease; }
@@ -430,7 +414,7 @@ footer.site a:hover{ color:#fff; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 900px){
-  .steps, .cards-3, .offer-grid, .pricing-grid{ grid-template-columns:1fr; }
+  .steps, .cards-3, .offer-grid{ grid-template-columns:1fr; }
   .stats-row{ grid-template-columns:1fr 1fr; }
   .app-shell{ grid-template-columns:1fr; }
   .app-side{ display:none; }
@@ -443,4 +427,6 @@ footer.site a:hover{ color:#fff; }
   .stats-row{ grid-template-columns:1fr 1fr; gap:10px; }
   .form-card{ padding:24px; }
   .hero-academic{ padding:60px 0 52px; }
+  .dispo-form{ flex-direction:column; align-items:stretch; }
+  .dispo-form .btn{ width:100%; }
 }

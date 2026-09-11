@@ -17,8 +17,6 @@
     <ul class="nav-links">
       <li><a href="index.html">Accueil</a></li>
       <li><a href="offres.html">Offres d'emploi</a></li>
-      <li><a href="formation.html">Formation &amp; Coaching</a></li>
-      <li><a href="tarifs.html">Tarifs entreprises</a></li>
     </ul>
     <div class="nav-actions">
       <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
@@ -34,7 +32,7 @@
       <p style="text-align:center; margin-bottom:28px;">Choisissez votre profil pour commencer.</p>
 
       <div class="role-tabs">
-        <button type="button" class="role-tab active" data-role="candidat">Candidat</button>
+        <button type="button" class="role-tab active" data-role="etudiant">Candidat</button>
         <button type="button" class="role-tab" data-role="entreprise">Entreprise</button>
       </div>
 
@@ -49,19 +47,19 @@
       </div>
 
       <!-- Champs spécifiques candidat -->
-      <div data-role-panel="candidat">
+      <div data-role-panel="etudiant">
         <div class="field">
           <label for="nom">Nom complet</label>
           <input type="text" id="nom" name="nom" placeholder="Ex : Awa Ndiaye" required>
         </div>
         <div class="field">
-          <label for="niveau-etude">Niveau d'étude</label>
+          <label for="niveau-etude">Dernier diplôme obtenu</label>
           <select id="niveau-etude" name="niveau-etude">
-            <option value="licence1">Bac+1</option>
-            <option value="licence2">Bac+2</option>
-            <option value="licence3">Bac+3</option>
-            <option value="master1">Bac+4</option>
-            <option value="master2">Bac+5</option>
+            <option value="bac2">Bac+2 (BTS / DUT)</option>
+            <option value="licence">Licence (Bac+3)</option>
+            <option value="master1">Master 1 (Bac+4)</option>
+            <option value="master2">Master 2 (Bac+5)</option>
+            <option value="ingenieur">Ingénieur / Grande école</option>
             <option value="autre">Autre</option>
           </select>
         </div>
@@ -107,7 +105,7 @@
         <div class="field">
           <label for="cv-lien">Lien vers votre CV</label>
           <input type="url" id="cv-lien" name="cv-lien" placeholder="Lien Google Drive, OneDrive...">
-          <p class="hint">Collez un lien de partage vers votre CV en ligne (Drive, OneDrive...).</p>
+          <p class="hint">Collez un lien de partage vers votre CV en ligne (Drive, OneDrive...). Il alimente votre profil dans la CVthèque consultée par les entreprises.</p>
         </div>
       </div>
 
@@ -126,6 +124,7 @@
             <option value="autre">Autre</option>
           </select>
         </div>
+        <p class="hint">Après votre inscription, choisissez votre formule d'abonnement (Starter, Business ou Premium) depuis votre espace entreprise. <a href="entreprise/tarifs.html">Voir les tarifs</a>.</p>
       </div>
 
       <p id="erreur-inscription" style="color:var(--danger); font-size:.85rem; display:none;"></p>
@@ -162,7 +161,7 @@
 
     let profileData = {};
 
-    if (role === "candidat") {
+    if (role === "etudiant") {
       profileData.nom = document.getElementById("nom").value.trim();
       profileData.niveauEtude = document.getElementById("niveau-etude").value;
       profileData.universite = document.getElementById("universite").value.trim();
@@ -175,6 +174,7 @@
       profileData.nom = entrepriseNom;
       profileData.entrepriseNom = entrepriseNom;
       profileData.secteur = document.getElementById("secteur").value;
+      profileData.abonnement = "aucun";
     }
 
     const bouton = form.querySelector("button[type=submit]");
@@ -184,7 +184,7 @@
     try {
       await inscrireUtilisateur(email, password, role, profileData);
       const destinations = {
-        candidat: "candidat/dashboard.html",
+        etudiant: "etudiant/dashboard.html",
         entreprise: "entreprise/dashboard.html",
       };
       window.location.href = destinations[role];

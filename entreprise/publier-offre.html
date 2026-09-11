@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Publier une offre — Talent'up SN</title>
+<title>Publier une offre — Talent'Up SN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
@@ -13,7 +13,7 @@
 
 <header class="topbar">
   <div class="container">
-    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'up SN</a>
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
     <div class="nav-actions">
       <span id="nom-entreprise-topbar" style="font-size:.85rem; color:var(--slate);"></span>
       <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
@@ -27,13 +27,14 @@
     <ul class="app-nav">
       <li><a href="dashboard.html">Tableau de bord</a></li>
       <li><a href="publier-offre.html" class="active">Publier une offre</a></li>
+      <li><a href="tarifs.html">Mon abonnement</a></li>
     </ul>
   </aside>
 
   <main class="app-main">
     <div class="app-head">
       <div>
-        <h2>Publier une offre de stage</h2>
+        <h2>Publier une offre d'emploi</h2>
         <p>Votre offre sera visible après validation par notre équipe RH (24-48h).</p>
       </div>
     </div>
@@ -83,36 +84,28 @@
         <input type="text" id="competences" placeholder="JavaScript, React, Git...">
       </div>
       <div class="field">
-        <label for="duree">Durée du stage</label>
-        <select id="duree">
-          <option>1 mois</option>
-          <option selected>3 mois</option>
-          <option>6 mois</option>
+        <label for="type-contrat">Type de contrat</label>
+        <select id="type-contrat">
+          <option value="stage">Stage</option>
+          <option value="cdd" selected>CDD</option>
+          <option value="cdi">CDI</option>
         </select>
       </div>
       <div class="field">
-        <label for="niveau-requis">Niveau d'étude requis</label>
+        <label for="niveau-requis">Niveau de diplôme requis</label>
         <select id="niveau-requis">
           <option value="">Tous niveaux</option>
-          <option value="licence1">Licence 1</option>
-          <option value="licence2">Licence 2</option>
-          <option value="licence3">Licence 3</option>
-          <option value="master1">Master 1</option>
-          <option value="master2">Master 2</option>
+          <option value="bac2">Bac+2</option>
+          <option value="licence">Licence (Bac+3)</option>
+          <option value="master1">Master 1 (Bac+4)</option>
+          <option value="master2">Master 2 (Bac+5)</option>
+          <option value="ingenieur">Ingénieur / Grande école</option>
         </select>
       </div>
       <div class="field">
         <label for="date-limite">Date limite de candidature</label>
         <input type="date" id="date-limite">
         <p class="hint">Laissez vide si votre offre reste ouverte sans date de clôture.</p>
-      </div>
-      <div class="field">
-        <label for="horaire">Compatibilité horaire</label>
-        <select id="horaire">
-          <option value="jour">Journée uniquement (recommandé pour cours du soir)</option>
-          <option value="flexible">Horaires flexibles</option>
-        </select>
-        <p class="hint">Ce critère détermine quels étudiants verront votre offre en priorité.</p>
       </div>
       <p id="erreur-offre" style="color:var(--danger); font-size:.85rem; display:none;"></p>
       <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Soumettre pour validation</button>
@@ -157,10 +150,9 @@
       domaine: document.getElementById("domaine").value,
       description: document.getElementById("description").value.trim(),
       competences: document.getElementById("competences").value.split(",").map((c) => c.trim()).filter(Boolean),
-      duree: document.getElementById("duree").value,
+      typeContrat: document.getElementById("type-contrat").value,
       niveauRequis: document.getElementById("niveau-requis").value,
       dateLimite: document.getElementById("date-limite").value,
-      horaire: document.getElementById("horaire").value,
     };
 
     const bouton = form.querySelector("button[type=submit]");

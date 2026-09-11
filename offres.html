@@ -17,8 +17,6 @@
     <ul class="nav-links">
       <li><a href="index.html">Accueil</a></li>
       <li><a href="offres.html" class="active">Offres d'emploi</a></li>
-      <li><a href="formation.html">Formation &amp; Coaching</a></li>
-      <li><a href="tarifs.html">Tarifs entreprises</a></li>
     </ul>
     <div class="nav-actions">
       <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
@@ -31,9 +29,9 @@
 <section class="section" style="padding-top:48px;">
   <div class="container">
     <div class="section-head">
-      <span class="eyebrow">Offres d'emploi</span>
-      <h2>Les offres d'emploi validées par notre équipe RH</h2>
-      <p id="texte-connexion-hint">Connectez-vous en tant que candidat pour voir votre score de présélection personnalisé sur chaque offre.</p>
+      <span class="eyebrow">Offres</span>
+      <h2>Des offres d'emploi présélectionnées</h2>
+      <p id="texte-connexion-hint">Connectez-vous en tant que candidat pour voir votre score de compatibilité personnalisé sur chaque offre.</p>
     </div>
 
     <div class="filters-bar">
@@ -76,22 +74,21 @@
       <div class="field">
         <label for="filtre-contrat">Type de contrat</label>
         <select id="filtre-contrat">
-          <option value="">Tous les contrats</option>
-          <option value="cdi">CDI</option>
+          <option value="">Tous types</option>
+          <option value="stage">Stage</option>
           <option value="cdd">CDD</option>
-          <option value="freelance">Freelance / Mission</option>
-          <option value="alternance">Alternance</option>
+          <option value="cdi">CDI</option>
         </select>
       </div>
       <div class="field">
         <label for="filtre-niveau">Niveau requis</label>
         <select id="filtre-niveau">
           <option value="">Tous niveaux</option>
-          <option value="licence1">Bac+1</option>
-          <option value="licence2">Bac+2</option>
-          <option value="licence3">Bac+3</option>
-          <option value="master1">Bac+4</option>
-          <option value="master2">Bac+5</option>
+          <option value="bac2">Bac+2</option>
+          <option value="licence">Licence (Bac+3)</option>
+          <option value="master1">Master 1 (Bac+4)</option>
+          <option value="master2">Master 2 (Bac+5)</option>
+          <option value="ingenieur">Ingénieur / Grande école</option>
         </select>
       </div>
     </div>
@@ -135,11 +132,11 @@
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         const doc = await db.collection("utilisateurs").doc(user.uid).get();
-        if (doc.exists && doc.data().role === "candidat") {
+        if (doc.exists && doc.data().role === "etudiant") {
           profilCandidatConnecte = { uid: user.uid, ...doc.data() };
           document.getElementById("texte-connexion-hint").textContent =
-            "Voici votre score de présélection personnalisé sur chaque offre.";
-          const candidatures = await chargerCandidaturesCandidat(user.uid);
+            "Voici votre score de compatibilité personnalisé sur chaque offre.";
+          const candidatures = await chargerCandidaturesEtudiant(user.uid);
           offresPostuleesIds = new Set(candidatures.map((c) => c.offreId));
         }
       }

@@ -39,7 +39,7 @@
 
     <div class="stats-row">
       <div class="stat-card">
-        <div class="stat-num" id="stat-candidats">—</div>
+        <div class="stat-num" id="stat-etudiants">—</div>
         <div class="stat-label">Candidats inscrits</div>
       </div>
       <div class="stat-card">
@@ -51,7 +51,7 @@
         <div class="stat-label">Candidatures envoyées</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num" id="stat-emplois">—</div>
+        <div class="stat-num" id="stat-recrutements">—</div>
         <div class="stat-label">Recrutements réalisés</div>
       </div>
     </div>
@@ -86,10 +86,10 @@
   protegerPage(["admin"], "../connexion.html", async () => {
     const stats = await chargerStatistiquesAdmin();
 
-    document.getElementById("stat-candidats").textContent = stats.nbCandidats;
+    document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
     document.getElementById("stat-entreprises").textContent = stats.nbEntreprises;
     document.getElementById("stat-candidatures").textContent = stats.nbCandidatures;
-    document.getElementById("stat-emplois").textContent = stats.nbEmploisObtenus;
+    document.getElementById("stat-recrutements").textContent = stats.nbRecrutements;
 
     const total = stats.nbCandidatures || 1;
     const parStatut = {};

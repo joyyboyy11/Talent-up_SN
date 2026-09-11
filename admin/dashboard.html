@@ -52,7 +52,7 @@
         <div class="stat-label">Offres refusées</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num" id="stat-candidats">—</div>
+        <div class="stat-num" id="stat-etudiants">—</div>
         <div class="stat-label">Candidats inscrits</div>
       </div>
     </div>
@@ -63,7 +63,7 @@
         <tr>
           <th>Offre</th>
           <th>Entreprise</th>
-          <th>Contrat</th>
+          <th>Type de contrat</th>
           <th>Statut</th>
           <th>Action</th>
         </tr>
@@ -102,7 +102,7 @@
     document.getElementById("stat-en-attente").textContent = stats.nbOffresEnAttente;
     document.getElementById("stat-validees").textContent = stats.nbOffresValidees;
     document.getElementById("stat-refusees").textContent = stats.nbOffresRefusees;
-    document.getElementById("stat-candidats").textContent = stats.nbCandidats;
+    document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
 
     const corps = document.getElementById("corps-tableau-validation");
     corps.innerHTML = enAttente.length

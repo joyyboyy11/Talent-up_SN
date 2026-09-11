@@ -38,21 +38,13 @@ async function refuserOffre(offreId) {
   await db.collection("offres").doc(offreId).update({ statut: "refusee" });
 }
 
-/* ---------- CVthèque ---------- */
-
-async function chargerCvtheque() {
-  const snap = await db.collection("utilisateurs").where("role", "==", "candidat").get();
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-}
-
-/* ---------- Score de présélection ----------
-   Pondération indicative (ajustable selon les retours des recruteurs) :
+/* ---------- Score de présélection (expérimental) ----------
+   Pondération indicative reprise du Business Plan :
    70% correspondance des compétences requises (offre.competences ∩
-   profil.competences), 30% adéquation globale du profil (niveau
-   d'étude par rapport au niveau requis, CV déposé, expérience).
-   La décision finale reste sous contrôle humain via la revue
-   manuelle de l'équipe RH (validation des offres, statut des
-   candidatures). */
+   profil.competences) et 30% adéquation globale du profil (domaine
+   d'études et niveau de diplôme par rapport à l'offre). Ce score est
+   un outil d'aide à la décision : la décision finale reste sous
+   contrôle humain via une revue manuelle de l'équipe RH. */
 
 function calculerScoreMatch(offre, profilCandidat) {
   const competencesOffre = (offre.competences || []).map((c) => c.toLowerCase().trim());
@@ -68,51 +60,54 @@ function calculerScoreMatch(offre, profilCandidat) {
     scoreCompetences = 0.5; // pas d'exigence précisée par l'offre
   }
 
-  const NIVEAUX = ["licence1", "licence2", "licence3", "master1", "master2"];
+  const NIVEAUX = ["bac2", "licence", "master1", "master2", "ingenieur"];
+  let scoreAdequation = 0.5; // valeur par défaut si l'un des deux champs manque
+  const memedomaine = offre.domaine && profilCandidat.domaine && offre.domaine === profilCandidat.domaine;
   let scoreNiveau = 0.5;
-  if (offre.niveauRequis) {
-    const idxRequis = NIVEAUX.indexOf(offre.niveauRequis);
-    const idxCandidat = NIVEAUX.indexOf(profilCandidat.niveauEtude);
-    scoreNiveau = idxCandidat >= idxRequis && idxCandidat !== -1 ? 1 : 0.3;
+  if (offre.niveauRequis && profilCandidat.niveauEtude) {
+    const indexOffre = NIVEAUX.indexOf(offre.niveauRequis);
+    const indexCandidat = NIVEAUX.indexOf(profilCandidat.niveauEtude);
+    if (indexOffre !== -1 && indexCandidat !== -1) {
+      scoreNiveau = indexCandidat >= indexOffre ? 1 : 0.4;
+    }
   }
-  const scoreCv = profilCandidat.cvUrl || profilCandidat.cv ? 1 : 0.4;
-  const scoreProfil = scoreNiveau * 0.6 + scoreCv * 0.4;
+  scoreAdequation = memedomaine ? Math.min(1, scoreNiveau + 0.3) : scoreNiveau * 0.7;
 
-  const score = scoreCompetences * 0.7 + scoreProfil * 0.3;
+  const score = scoreCompetences * 0.7 + scoreAdequation * 0.3;
   return Math.round(score * 100);
 }
 
 /* ---------- Candidatures ---------- */
 
-async function aDejaPostule(candidatId, offreId) {
+async function aDejaPostule(etudiantId, offreId) {
   const snap = await db.collection("candidatures")
-    .where("candidatId", "==", candidatId)
+    .where("etudiantId", "==", etudiantId)
     .where("offreId", "==", offreId)
     .limit(1)
     .get();
   return !snap.empty;
 }
 
-async function postulerOffre(offre, profilCandidat, candidatId) {
-  if (await aDejaPostule(candidatId, offre.id)) {
+async function postulerOffre(offre, profilEtudiant, etudiantId) {
+  if (await aDejaPostule(etudiantId, offre.id)) {
     throw new Error("candidature-existante");
   }
-  const score = calculerScoreMatch(offre, profilCandidat);
+  const score = calculerScoreMatch(offre, profilEtudiant);
   return db.collection("candidatures").add({
     offreId: offre.id,
     offreTitre: offre.titre,
     entrepriseId: offre.entrepriseId,
     entrepriseNom: offre.entrepriseNom,
-    candidatId,
-    candidatNom: profilCandidat.nom,
+    etudiantId,
+    etudiantNom: profilEtudiant.nom,
     matchScore: score,
     statut: "envoyee",
     dateEnvoi: firebase.firestore.FieldValue.serverTimestamp(),
   });
 }
 
-async function chargerCandidaturesCandidat(candidatId) {
-  const snap = await db.collection("candidatures").where("candidatId", "==", candidatId).get();
+async function chargerCandidaturesEtudiant(etudiantId) {
+  const snap = await db.collection("candidatures").where("etudiantId", "==", etudiantId).get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
@@ -139,14 +134,14 @@ async function chargerStatistiquesAdmin() {
   const candidatures = candidaturesSnap.docs.map((d) => d.data());
 
   return {
-    nbCandidats: utilisateurs.filter((u) => u.role === "candidat").length,
+    nbEtudiants: utilisateurs.filter((u) => u.role === "etudiant").length,
     nbEntreprises: utilisateurs.filter((u) => u.role === "entreprise").length,
     nbOffresEnAttente: offres.filter((o) => o.statut === "en_attente").length,
     nbOffresValidees: offres.filter((o) => o.statut === "validee").length,
     nbOffresRefusees: offres.filter((o) => o.statut === "refusee").length,
     candidatures,
     nbCandidatures: candidatures.length,
-    nbEmploisObtenus: candidatures.filter((c) => c.statut === "acceptee").length,
+    nbRecrutements: candidatures.filter((c) => c.statut === "acceptee").length,
   };
 }
 
@@ -162,7 +157,7 @@ function libelleStatutCandidature(statut) {
     envoyee: "Envoyée",
     vue: "Vue",
     entretien: "Entretien",
-    acceptee: "Recruté(e)",
+    acceptee: "Acceptée",
     refusee: "Refusée",
   }[statut] || statut;
 }

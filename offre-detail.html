@@ -17,8 +17,6 @@
     <ul class="nav-links">
       <li><a href="index.html">Accueil</a></li>
       <li><a href="offres.html" class="active">Offres d'emploi</a></li>
-      <li><a href="formation.html">Formation &amp; Coaching</a></li>
-      <li><a href="tarifs.html">Tarifs entreprises</a></li>
     </ul>
     <div class="nav-actions">
       <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
@@ -45,7 +43,7 @@
 
       <div style="display:grid; grid-template-columns:2fr 1fr; gap:24px; align-items:flex-start;">
         <div class="card">
-          <h3 style="margin-top:0;">Description de la mission</h3>
+          <h3 style="margin-top:0;">Description du poste</h3>
           <p id="detail-description" style="white-space:pre-line; color:var(--slate);"></p>
 
           <h3>Compétences requises</h3>
@@ -62,7 +60,7 @@
             <span class="offer-match" id="detail-match-score"></span>
           </div>
           <p id="detail-connexion-hint" class="hint" style="margin-bottom:14px;">
-            Connectez-vous en tant que candidat pour voir votre score de présélection et postuler.
+            Connectez-vous en tant que candidat pour voir votre score de compatibilité et postuler.
           </p>
           <button class="btn btn-primary btn-block" id="btn-postuler" data-offer-id="">Postuler</button>
         </div>
@@ -125,14 +123,14 @@
     auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       const doc = await db.collection("utilisateurs").doc(user.uid).get();
-      if (!doc.exists || doc.data().role !== "candidat") return;
+      if (!doc.exists || doc.data().role !== "etudiant") return;
 
       profilCandidatConnecte = { uid: user.uid, ...doc.data() };
       dejaPostule = await aDejaPostule(user.uid, offreCourante.id);
 
       const score = calculerScoreMatch(offreCourante, profilCandidatConnecte);
       document.getElementById("detail-match-bloc").style.display = "block";
-      document.getElementById("detail-match-score").textContent = `${score}% de correspondance`;
+      document.getElementById("detail-match-score").textContent = `${score}% compatible`;
       document.getElementById("detail-connexion-hint").style.display = "none";
 
       const bouton = document.getElementById("btn-postuler");
@@ -208,7 +206,7 @@
 
     document.getElementById("detail-tags").innerHTML = `
       <span class="tag">${labelContrat(o.typeContrat)}</span>
-      ${o.lieu ? `<span class="tag">${o.lieu}</span>` : ""}
+      ${o.niveauRequis ? `<span class="tag">${labelNiveau(o.niveauRequis)}</span>` : ""}
     `;
 
     document.getElementById("detail-competences").innerHTML = (o.competences || []).length

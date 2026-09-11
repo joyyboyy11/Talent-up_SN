@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon profil — Talent'up SN</title>
+<title>Mon profil — Talent'Up SN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
@@ -13,7 +13,7 @@
 
 <header class="topbar">
   <div class="container">
-    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'up SN</a>
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
     <div class="nav-actions">
       <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
     </div>
@@ -22,12 +22,13 @@
 
 <div class="app-shell">
   <aside class="app-side">
-    <div class="app-side-user"><strong id="nom-etudiant-side">—</strong>Compte étudiant</div>
+    <div class="app-side-user"><strong id="nom-etudiant-side">—</strong>Compte candidat</div>
     <ul class="app-nav">
       <li><a href="dashboard.html">Tableau de bord</a></li>
-      <li><a href="../offres.html">Offres de stage</a></li>
+      <li><a href="../offres.html">Offres d'emploi</a></li>
       <li><a href="profil.html" class="active">Mon profil</a></li>
       <li><a href="candidatures.html">Mes candidatures</a></li>
+      <li><a href="formation.html">Formation &amp; Coaching</a></li>
     </ul>
   </aside>
 
@@ -35,7 +36,7 @@
     <div class="app-head">
       <div>
         <h2>Mon profil</h2>
-        <p>Tenez vos informations à jour pour de meilleurs matchs.</p>
+        <p>Tenez vos informations à jour : elles alimentent la CVthèque consultée par les entreprises et la présélection RH.</p>
       </div>
     </div>
 
@@ -45,13 +46,13 @@
         <input type="text" id="nom">
       </div>
       <div class="field">
-        <label for="niveau-etude">Niveau d'étude</label>
+        <label for="niveau-etude">Dernier diplôme obtenu</label>
         <select id="niveau-etude">
-          <option value="licence1">Licence 1</option>
-          <option value="licence2">Licence 2</option>
-          <option value="licence3">Licence 3</option>
-          <option value="master1">Master 1</option>
-          <option value="master2">Master 2</option>
+          <option value="bac2">Bac+2 (BTS / DUT)</option>
+          <option value="licence">Licence (Bac+3)</option>
+          <option value="master1">Master 1 (Bac+4)</option>
+          <option value="master2">Master 2 (Bac+5)</option>
+          <option value="ingenieur">Ingénieur / Grande école</option>
           <option value="autre">Autre</option>
         </select>
       </div>
@@ -97,14 +98,7 @@
       <div class="field">
         <label for="cv-lien">Lien vers votre CV</label>
         <input type="url" id="cv-lien" placeholder="Lien Google Drive, OneDrive...">
-        <p class="hint">Collez un lien de partage vers votre CV en ligne (Drive, OneDrive...).</p>
-      </div>
-      <div class="field">
-        <label>Mes disponibilités</label>
-        <p class="hint" style="margin-top:-4px; margin-bottom:10px;">
-          Ajoutez ou retirez vos créneaux libres en journée (entre 8h et 16h).
-        </p>
-        <div data-availability-list id="dispo-profil"></div>
+        <p class="hint">Collez un lien de partage vers votre CV en ligne (Drive, OneDrive...). Il alimente votre profil dans la CVthèque.</p>
       </div>
       <p id="confirmation-profil" style="display:none; color:var(--success); font-weight:600;">✓ Profil mis à jour.</p>
       <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Enregistrer les modifications</button>
@@ -131,23 +125,17 @@
     uidCourant = profil.uid;
     document.getElementById("nom-etudiant-side").textContent = profil.nom;
     document.getElementById("nom").value = profil.nom || "";
-    document.getElementById("niveau-etude").value = profil.niveauEtude || "licence3";
+    document.getElementById("niveau-etude").value = profil.niveauEtude || "licence";
     document.getElementById("universite").value = profil.universite || "";
     document.getElementById("domaine").value = profil.domaine || "informatique";
     document.getElementById("competences").value = (profil.competences || []).join(", ");
     document.getElementById("cv-lien").value = profil.cvLien || "";
-
-    // Le composant est déjà construit par initAvailabilityLists (DOMContentLoaded) ;
-    // on y recharge les créneaux existants une fois le profil chargé.
-    const grille = document.getElementById("dispo-profil");
-    setDisponibilites(grille, profil.disponibilites);
   });
 
   document.getElementById("form-profil").addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!uidCourant) return;
 
-    const grille = document.getElementById("dispo-profil");
     const donnees = {
       nom: document.getElementById("nom").value.trim(),
       niveauEtude: document.getElementById("niveau-etude").value,
@@ -155,7 +143,6 @@
       domaine: document.getElementById("domaine").value,
       competences: document.getElementById("competences").value.split(",").map((c) => c.trim()).filter(Boolean),
       cvLien: document.getElementById("cv-lien").value.trim(),
-      disponibilites: getDisponibilites(grille),
     };
 
     const bouton = e.target.querySelector("button[type=submit]");
