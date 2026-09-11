@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Espace entreprise — Talent'up SN</title>
+<title>Espace entreprise — Talent'Up SN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
@@ -13,7 +13,7 @@
 
 <header class="topbar">
   <div class="container">
-    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'up SN</a>
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
     <div class="nav-actions">
       <span id="nom-entreprise-topbar" style="font-size:.85rem; color:var(--slate);"></span>
       <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
@@ -27,6 +27,7 @@
     <ul class="app-nav">
       <li><a href="dashboard.html" class="active">Tableau de bord</a></li>
       <li><a href="publier-offre.html">Publier une offre</a></li>
+      <li><a href="cvtheque.html">CVthèque</a></li>
     </ul>
   </aside>
 
@@ -34,7 +35,7 @@
     <div class="app-head">
       <div>
         <h2 id="titre-bienvenue">Bienvenue</h2>
-        <p>Gérez vos offres de stage et vos candidatures reçues.</p>
+        <p>Gérez vos offres d'emploi et vos candidatures reçues.</p>
       </div>
       <a href="publier-offre.html" class="btn btn-amber">+ Publier une offre</a>
     </div>
@@ -64,7 +65,7 @@
       <thead>
         <tr>
           <th>Offre</th>
-          <th>Horaires demandés</th>
+          <th>Type de contrat</th>
           <th>Date limite</th>
           <th>Candidatures</th>
           <th>Statut</th>
@@ -126,7 +127,7 @@
       ? offres.map((o) => `
         <tr>
           <td>${o.titre}</td>
-          <td>${labelHoraire(o.horaire)}</td>
+          <td>${labelContrat(o.typeContrat)}</td>
           <td>${o.dateLimite ? new Date(o.dateLimite + "T00:00:00").toLocaleDateString("fr-FR") : "—"}${offreExpiree(o) ? ` <span class="badge badge-danger">Close</span>` : ""}</td>
           <td>${nbCandidaturesParOffre[o.id] || 0}</td>
           <td><span class="badge ${badgeParStatutOffre[o.statut] || "badge-neutral"}">${libelleParStatutOffre[o.statut] || o.statut}</span></td>
@@ -141,7 +142,7 @@
       .slice(0, 6);
 
     // Dès que l'entreprise consulte une candidature "Envoyée", on la marque
-    // "Vue" (comme un accusé de lecture) — l'étudiant voit alors sa
+    // "Vue" (comme un accusé de lecture) — le candidat voit alors sa
     // candidature progresser dans son suivi de statut.
     const aMarquerVue = dernieresCandidatures.filter((c) => c.statut === "envoyee");
     if (aMarquerVue.length) {
@@ -154,10 +155,10 @@
         <div class="offer-card">
           <div class="offer-top">
             <div>
-              <h3 style="margin-bottom:2px;">${c.etudiantNom}</h3>
+              <h3 style="margin-bottom:2px;">${c.candidatNom}</h3>
               <p style="margin:0;">${c.offreTitre}</p>
             </div>
-            <span class="offer-match">${c.matchScore}% compatible</span>
+            <span class="offer-match">${c.matchScore}% de correspondance</span>
           </div>
           <div class="tag-row">
             <span class="badge ${classeBadgeStatut(c.statut)}">${libelleStatutCandidature(c.statut)}</span>

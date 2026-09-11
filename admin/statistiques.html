@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Statistiques — Talent'up SN</title>
+<title>Statistiques — Talent'Up SN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
@@ -13,7 +13,7 @@
 
 <header class="topbar">
   <div class="container">
-    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'up SN</a>
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
     <div class="nav-actions">
       <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
     </div>
@@ -39,8 +39,8 @@
 
     <div class="stats-row">
       <div class="stat-card">
-        <div class="stat-num" id="stat-etudiants">—</div>
-        <div class="stat-label">Étudiants inscrits</div>
+        <div class="stat-num" id="stat-candidats">—</div>
+        <div class="stat-label">Candidats inscrits</div>
       </div>
       <div class="stat-card">
         <div class="stat-num" id="stat-entreprises">—</div>
@@ -51,8 +51,8 @@
         <div class="stat-label">Candidatures envoyées</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num" id="stat-stages">—</div>
-        <div class="stat-label">Stages obtenus</div>
+        <div class="stat-num" id="stat-emplois">—</div>
+        <div class="stat-label">Recrutements réalisés</div>
       </div>
     </div>
 
@@ -86,10 +86,10 @@
   protegerPage(["admin"], "../connexion.html", async () => {
     const stats = await chargerStatistiquesAdmin();
 
-    document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
+    document.getElementById("stat-candidats").textContent = stats.nbCandidats;
     document.getElementById("stat-entreprises").textContent = stats.nbEntreprises;
     document.getElementById("stat-candidatures").textContent = stats.nbCandidatures;
-    document.getElementById("stat-stages").textContent = stats.nbStagesObtenus;
+    document.getElementById("stat-emplois").textContent = stats.nbEmploisObtenus;
 
     const total = stats.nbCandidatures || 1;
     const parStatut = {};

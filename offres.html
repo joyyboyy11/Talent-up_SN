@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Offres de stage — Talent'up SN</title>
+<title>Offres d'emploi — Talent'Up SN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
@@ -13,10 +13,12 @@
 
 <header class="topbar">
   <div class="container">
-    <a href="index.html" class="brand"><span class="brand-mark"></span>Talent'up SN</a>
+    <a href="index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
     <ul class="nav-links">
       <li><a href="index.html">Accueil</a></li>
-      <li><a href="offres.html" class="active">Offres de stage</a></li>
+      <li><a href="offres.html" class="active">Offres d'emploi</a></li>
+      <li><a href="formation.html">Formation &amp; Coaching</a></li>
+      <li><a href="tarifs.html">Tarifs entreprises</a></li>
     </ul>
     <div class="nav-actions">
       <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
@@ -29,9 +31,9 @@
 <section class="section" style="padding-top:48px;">
   <div class="container">
     <div class="section-head">
-      <span class="eyebrow">Offres</span>
-      <h2>Des stages compatibles avec vos horaires</h2>
-      <p id="texte-connexion-hint">Connectez-vous en tant qu'étudiant pour voir votre score de compatibilité personnalisé sur chaque offre.</p>
+      <span class="eyebrow">Offres d'emploi</span>
+      <h2>Les offres d'emploi validées par notre équipe RH</h2>
+      <p id="texte-connexion-hint">Connectez-vous en tant que candidat pour voir votre score de présélection personnalisé sur chaque offre.</p>
     </div>
 
     <div class="filters-bar">
@@ -72,22 +74,24 @@
         </select>
       </div>
       <div class="field">
-        <label for="filtre-horaire">Horaires</label>
-        <select id="filtre-horaire">
-          <option value="">Tous les horaires</option>
-          <option value="jour">Journée uniquement</option>
-          <option value="flexible">Horaires flexibles</option>
+        <label for="filtre-contrat">Type de contrat</label>
+        <select id="filtre-contrat">
+          <option value="">Tous les contrats</option>
+          <option value="cdi">CDI</option>
+          <option value="cdd">CDD</option>
+          <option value="freelance">Freelance / Mission</option>
+          <option value="alternance">Alternance</option>
         </select>
       </div>
       <div class="field">
         <label for="filtre-niveau">Niveau requis</label>
         <select id="filtre-niveau">
           <option value="">Tous niveaux</option>
-          <option value="licence1">Licence 1</option>
-          <option value="licence2">Licence 2</option>
-          <option value="licence3">Licence 3</option>
-          <option value="master1">Master 1</option>
-          <option value="master2">Master 2</option>
+          <option value="licence1">Bac+1</option>
+          <option value="licence2">Bac+2</option>
+          <option value="licence3">Bac+3</option>
+          <option value="master1">Bac+4</option>
+          <option value="master2">Bac+5</option>
         </select>
       </div>
     </div>
@@ -107,7 +111,7 @@
 <script src="js/main.js"></script>
 <script>
   let offresCache = [];
-  let profilEtudiantConnecte = null;
+  let profilCandidatConnecte = null;
   let offresPostuleesIds = new Set();
 
   document.addEventListener("DOMContentLoaded", async () => {
@@ -123,19 +127,19 @@
     }
 
     const domaine = document.querySelector("#filtre-domaine");
-    const horaire = document.querySelector("#filtre-horaire");
+    const contrat = document.querySelector("#filtre-contrat");
     const niveau = document.querySelector("#filtre-niveau");
     const recherche = document.querySelector("#filtre-recherche");
-    [domaine, horaire, niveau, recherche].forEach((el) => el && el.addEventListener("input", afficherOffres));
+    [domaine, contrat, niveau, recherche].forEach((el) => el && el.addEventListener("input", afficherOffres));
 
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         const doc = await db.collection("utilisateurs").doc(user.uid).get();
-        if (doc.exists && doc.data().role === "etudiant") {
-          profilEtudiantConnecte = { uid: user.uid, ...doc.data() };
+        if (doc.exists && doc.data().role === "candidat") {
+          profilCandidatConnecte = { uid: user.uid, ...doc.data() };
           document.getElementById("texte-connexion-hint").textContent =
-            "Voici votre score de compatibilité personnalisé sur chaque offre.";
-          const candidatures = await chargerCandidaturesEtudiant(user.uid);
+            "Voici votre score de présélection personnalisé sur chaque offre.";
+          const candidatures = await chargerCandidaturesCandidat(user.uid);
           offresPostuleesIds = new Set(candidatures.map((c) => c.offreId));
         }
       }
@@ -146,16 +150,16 @@
       const q = (recherche?.value || "").toLowerCase();
       const filtrees = offresCache.filter((o) => {
         const matchDomaine = !domaine?.value || o.domaine === domaine.value;
-        const matchHoraire = !horaire?.value || o.horaire === horaire.value;
+        const matchContrat = !contrat?.value || o.typeContrat === contrat.value;
         const matchNiveau = !niveau?.value || !o.niveauRequis || o.niveauRequis === niveau.value;
         const matchQ = !q || o.titre.toLowerCase().includes(q) || (o.entrepriseNom || "").toLowerCase().includes(q);
-        return matchDomaine && matchHoraire && matchNiveau && matchQ;
+        return matchDomaine && matchContrat && matchNiveau && matchQ;
       }).map((o) => ({
         ...o,
-        matchScore: profilEtudiantConnecte ? calculerScoreMatch(o, profilEtudiantConnecte) : undefined,
+        matchScore: profilCandidatConnecte ? calculerScoreMatch(o, profilCandidatConnecte) : undefined,
       }));
 
-      renderOffers(list, filtrees, { afficherMatch: !!profilEtudiantConnecte, offresPostuleesIds });
+      renderOffers(list, filtrees, { afficherMatch: !!profilCandidatConnecte, offresPostuleesIds });
 
       list.querySelectorAll("[data-postuler]").forEach((btn) => {
         btn.addEventListener("click", () => gererPostulation(btn.dataset.postuler));
@@ -163,8 +167,8 @@
     }
 
     async function gererPostulation(offreId) {
-      if (!auth.currentUser || !profilEtudiantConnecte) {
-        alert("Connectez-vous en tant qu'étudiant pour postuler.");
+      if (!auth.currentUser || !profilCandidatConnecte) {
+        alert("Connectez-vous en tant que candidat pour postuler.");
         window.location.href = "connexion.html";
         return;
       }
@@ -178,7 +182,7 @@
         return;
       }
       try {
-        await postulerOffre(offre, profilEtudiantConnecte, auth.currentUser.uid);
+        await postulerOffre(offre, profilCandidatConnecte, auth.currentUser.uid);
         offresPostuleesIds.add(offreId);
         afficherOffres();
         alert("Candidature envoyée !");

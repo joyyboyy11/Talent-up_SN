@@ -1,5 +1,5 @@
 // =============================================================
-// StagePasse — scripts partagés (pur JS, sans dépendance)
+// Talent'Up SN — scripts partagés (pur JS, sans dépendance)
 // Les données réelles viennent de Firebase (voir firebase-config.js,
 // auth-service.js, app-data.js). Ce fichier ne contient plus que des
 // utilitaires d'interface réutilisés par plusieurs pages.
@@ -8,7 +8,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   initNavToggle();
   initRoleTabs();
-  initAvailabilityLists();
 });
 
 /* ---------- Menu mobile (drawer, voir css/style.css) ---------- */
@@ -58,157 +57,15 @@ function initRoleTabs() {
   });
 }
 
-/* ---------- Disponibilités (élément signature) ----------
-   Remplace l'ancienne grille horaire par un formulaire "ajouter un
-   créneau" : l'étudiant choisit un jour + une heure de début/fin
-   (entre 8h et 16h — les cours du soir ont lieu de 16h à 18h et
-   restent donc indisponibles), puis retrouve ses créneaux dans une
-   liste qu'il peut compléter ou vider créneau par créneau.
-   Chaque conteneur garde son état courant dans `container._slots`
-   (tableau d'objets { jour, debut, fin }) ; voir getDisponibilites
-   / setDisponibilites plus bas pour la lecture/écriture Firestore. */
-const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-const HEURE_MIN = "08:00";
-const HEURE_MAX = "16:00";
-
-const EXEMPLE_DISPONIBILITES = [
-  { jour: "Lundi", debut: "08:00", fin: "12:00" },
-  { jour: "Mercredi", debut: "14:00", fin: "16:00" },
-  { jour: "Vendredi", debut: "08:00", fin: "13:00" },
-];
-
-function initAvailabilityLists() {
-  document.querySelectorAll("[data-availability-list]").forEach((el) => {
-    if (!el.hasAttribute("data-built")) buildAvailabilityList(el);
-  });
-}
-
-function formatHeure(heure) {
-  return heure.replace(":", "h");
-}
-
-function trierCreneaux(slots) {
-  return [...slots].sort((a, b) => {
-    const diffJour = JOURS.indexOf(a.jour) - JOURS.indexOf(b.jour);
-    return diffJour !== 0 ? diffJour : a.debut.localeCompare(b.debut);
-  });
-}
-
-function renderAvailabilityList(container) {
-  const liste = container.querySelector(".dispo-list");
-  const vide = container.querySelector(".dispo-empty");
-  const slots = trierCreneaux(container._slots || []);
-
-  liste.innerHTML = slots
-    .map(
-      (slot, index) => `
-    <li class="dispo-item" data-index="${index}">
-      <span>${slot.jour} · ${formatHeure(slot.debut)} – ${formatHeure(slot.fin)}</span>
-      ${
-        container.hasAttribute("data-readonly")
-          ? ""
-          : `<button type="button" class="dispo-remove" data-index="${index}" aria-label="Supprimer ce créneau">×</button>`
-      }
-    </li>`
-    )
-    .join("");
-
-  vide.style.display = slots.length ? "none" : "block";
-}
-
-function buildAvailabilityList(container) {
-  const readOnly = container.hasAttribute("data-readonly");
-  container._slots = readOnly ? EXEMPLE_DISPONIBILITES : [];
-
-  const optionsJours = JOURS.map((j) => `<option value="${j}">${j}</option>`).join("");
-
-  container.innerHTML = `
-    <div class="dispo-widget">
-      ${
-        readOnly
-          ? ""
-          : `<div class="dispo-form">
-              <div class="dispo-form-field">
-                <label>Jour</label>
-                <select class="dispo-jour">${optionsJours}</select>
-              </div>
-              <div class="dispo-form-field">
-                <label>De</label>
-                <input type="time" class="dispo-debut" value="${HEURE_MIN}" min="${HEURE_MIN}" max="${HEURE_MAX}" step="1800">
-              </div>
-              <div class="dispo-form-field">
-                <label>À</label>
-                <input type="time" class="dispo-fin" value="12:00" min="${HEURE_MIN}" max="${HEURE_MAX}" step="1800">
-              </div>
-              <button type="button" class="btn btn-secondary btn-sm dispo-add">+ Ajouter</button>
-            </div>
-            <p class="dispo-error" style="display:none; color:var(--danger); font-size:.8rem; margin:6px 0 0;"></p>`
-      }
-      <ul class="dispo-list"></ul>
-      <p class="dispo-empty hint" style="margin:8px 0 0;">Aucun créneau ajouté pour le moment.</p>
-    </div>
-  `;
-  container.setAttribute("data-built", "true");
-  renderAvailabilityList(container);
-
-  if (readOnly) return;
-
-  const erreur = container.querySelector(".dispo-error");
-  const afficherErreur = (message) => {
-    erreur.textContent = message;
-    erreur.style.display = "block";
-  };
-
-  container.querySelector(".dispo-add").addEventListener("click", () => {
-    erreur.style.display = "none";
-    const jour = container.querySelector(".dispo-jour").value;
-    const debut = container.querySelector(".dispo-debut").value;
-    const fin = container.querySelector(".dispo-fin").value;
-
-    if (!debut || !fin) return afficherErreur("Choisissez une heure de début et de fin.");
-    if (debut >= fin) return afficherErreur("L'heure de fin doit être après l'heure de début.");
-    if (debut < HEURE_MIN || fin > HEURE_MAX) {
-      return afficherErreur("Les créneaux doivent être compris entre 8h et 16h (les cours du soir ont lieu de 16h à 18h).");
-    }
-    const existeDeja = container._slots.some(
-      (s) => s.jour === jour && s.debut === debut && s.fin === fin
-    );
-    if (existeDeja) return afficherErreur("Ce créneau est déjà dans votre liste.");
-
-    container._slots.push({ jour, debut, fin });
-    renderAvailabilityList(container);
-  });
-
-  container.querySelector(".dispo-list").addEventListener("click", (e) => {
-    const bouton = e.target.closest(".dispo-remove");
-    if (!bouton) return;
-    const slots = trierCreneaux(container._slots);
-    slots.splice(Number(bouton.dataset.index), 1);
-    container._slots = slots;
-    renderAvailabilityList(container);
-  });
-}
-
-/** Lit la sélection courante : renvoie [{ jour, debut, fin }, ...] */
-function getDisponibilites(container) {
-  return trierCreneaux(container._slots || []);
-}
-
-/** Recharge une liste à partir de créneaux sauvegardés (ex: profil Firestore) */
-function setDisponibilites(container, disponibilites) {
-  container._slots = disponibilites || [];
-  renderAvailabilityList(container);
-}
-
 /* ---------- Rendu générique d'une liste d'offres ----------
    Utilisé par offres.html et les tableaux de bord. `offres` doit être
-   un tableau d'objets { id, titre, entrepriseNom, competences[], horaire,
-   duree, matchScore? }. Si afficherActions est true, les boutons
-   Postuler/Détail sont ajoutés avec data-offer-id pour être branchés
-   par la page appelante. */
+   un tableau d'objets { id, titre, entrepriseNom, competences[],
+   typeContrat, lieu, niveauRequis, matchScore? }. Si afficherActions
+   est true, les boutons Postuler/Détail sont ajoutés avec
+   data-offer-id pour être branchés par la page appelante. */
 function renderOffers(list, offres, { afficherMatch = true, offresPostuleesIds = new Set(), detailLinkPrefix = "" } = {}) {
   if (!offres.length) {
-    list.innerHTML = `<div class="empty-state"><h3>Aucune offre ne correspond</h3><p>Essayez d'élargir vos filtres, notamment sur les horaires.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><h3>Aucune offre ne correspond</h3><p>Essayez d'élargir vos filtres.</p></div>`;
     return;
   }
   list.innerHTML = offres.map((o) => {
@@ -221,13 +78,13 @@ function renderOffers(list, offres, { afficherMatch = true, offresPostuleesIds =
           <p style="margin:0">${o.entrepriseNom || ""}</p>
         </div>
         ${afficherMatch && typeof o.matchScore === "number"
-          ? `<span class="offer-match">${o.matchScore}% compatible</span>`
+          ? `<span class="offer-match">${o.matchScore}% de correspondance</span>`
           : ""}
       </div>
       <div class="tag-row">
         ${(o.competences || []).slice(0, 3).map((c) => `<span class="tag">${c}</span>`).join("")}
-        <span class="tag">${labelHoraire(o.horaire)}</span>
-        <span class="tag">${o.duree || ""}</span>
+        <span class="tag">${labelContrat(o.typeContrat)}</span>
+        ${o.lieu ? `<span class="tag">${o.lieu}</span>` : ""}
         ${o.niveauRequis ? `<span class="tag">${labelNiveau(o.niveauRequis)}</span>` : ""}
         ${expiree ? `<span class="tag" style="background:var(--danger-bg); color:var(--danger); border-color:var(--danger-bg);">Candidatures closes</span>`
           : o.dateLimite ? `<span class="tag">Avant le ${new Date(o.dateLimite + "T00:00:00").toLocaleDateString("fr-FR")}</span>` : ""}
@@ -245,14 +102,14 @@ function renderOffers(list, offres, { afficherMatch = true, offresPostuleesIds =
   }).join("");
 }
 
-function labelHoraire(h) {
-  return { jour: "Journée uniquement", flexible: "Horaires flexibles" }[h] || h;
+function labelContrat(c) {
+  return { cdi: "CDI", cdd: "CDD", freelance: "Freelance / Mission", alternance: "Alternance" }[c] || (c || "Non précisé");
 }
 
 function labelNiveau(n) {
   return {
-    licence1: "Licence 1", licence2: "Licence 2", licence3: "Licence 3",
-    master1: "Master 1", master2: "Master 2",
+    licence1: "Bac+1", licence2: "Bac+2", licence3: "Bac+3",
+    master1: "Bac+4", master2: "Bac+5",
   }[n] || "Tous niveaux";
 }
 

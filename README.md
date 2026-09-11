@@ -1,9 +1,10 @@
-# Talent'up SN
+# Talent'Up SN
 
-Plateforme web (HTML / CSS / JS vanilla + Firebase) mettant en relation des
-étudiants inscrits en cours du soir avec des entreprises proposant des
-stages compatibles avec leurs horaires. Trois espaces : **étudiant**,
-**entreprise**, **admin / RH**.
+Plateforme web (HTML / CSS / JS vanilla + Firebase) de recrutement et
+d'employabilité mettant en relation des jeunes diplômés sénégalais
+(Bac+2 à Bac+5) avec des PME et startups qui recrutent : offres d'emploi,
+CVthèque, présélection RH et modules de Formation & Coaching. Trois
+espaces : **candidat**, **entreprise**, **admin / RH**.
 
 ## Configuration Firebase
 
@@ -41,27 +42,31 @@ globales, il ne doit pas être auto-attribuable). Pour créer un compte admin :
 
 ```
 index.html              Accueil
-offres.html              Liste publique des offres validées
+offres.html              Liste publique des offres d'emploi validées
 offre-detail.html        Détail d'une offre (description, compétences, postuler)
-inscription.html         Création de compte (étudiant / entreprise)
-connexion.html            Connexion (rôle détecté automatiquement)
-etudiant/                 Tableau de bord, profil, candidatures
-entreprise/                Tableau de bord, publication d'offre
-admin/                     Validation des offres, statistiques
-js/firebase-config.js     Config du projet Firebase
-js/auth-service.js        Inscription / connexion / protection des pages
-js/app-data.js             Accès Firestore (offres, candidatures, score de match)
-js/main.js                 Utilitaires d'interface (menu, disponibilités, cartes d'offre)
-firestore.rules            Règles de sécurité Firestore
+formation.html            Modules de Formation & Coaching
+tarifs.html                Grille tarifaire entreprises (Starter / Business / Premium...)
+inscription.html          Création de compte (candidat / entreprise)
+connexion.html             Connexion (rôle détecté automatiquement)
+candidat/                  Tableau de bord, profil, candidatures
+entreprise/                 Tableau de bord, publication d'offre, CVthèque
+admin/                      Validation des offres, statistiques
+js/firebase-config.js      Config du projet Firebase
+js/auth-service.js         Inscription / connexion / protection des pages
+js/app-data.js              Accès Firestore (offres, candidatures, CVthèque, score de présélection)
+js/main.js                  Utilitaires d'interface (menu, cartes d'offre)
+firestore.rules             Règles de sécurité Firestore
 ```
 
-## Le score de compatibilité
+## Le score de présélection
 
-Chaque offre affiche, pour un étudiant connecté, un score sur 100 combinant :
+Chaque offre affiche, pour un candidat connecté, un score sur 100 combinant :
 
-- **60 %** — compétences en commun entre l'offre et le profil étudiant
-- **40 %** — compatibilité horaire (une offre « flexible » est toujours
-  compatible ; une offre « journée » demande au moins 3 créneaux de
-  disponibilité en journée)
+- **70 %** — compétences en commun entre l'offre et le profil candidat
+- **30 %** — adéquation globale du profil (niveau d'étude par rapport au
+  niveau requis, CV déposé)
 
+Cette pondération est indicative et vouée à être ajustée selon les retours
+des recruteurs ; la décision finale reste sous contrôle humain via la revue
+manuelle de l'équipe RH (validation des offres, statut des candidatures).
 Voir `calculerScoreMatch` dans `js/app-data.js`.

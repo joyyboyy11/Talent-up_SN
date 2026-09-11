@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon profil — Talent'Up SN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
+    <div class="nav-actions">
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong id="nom-candidat-side">—</strong>Compte candidat</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html">Tableau de bord</a></li>
+      <li><a href="../offres.html">Offres d'emploi</a></li>
+      <li><a href="../formation.html">Formation &amp; Coaching</a></li>
+      <li><a href="profil.html" class="active">Mon profil</a></li>
+      <li><a href="candidatures.html">Mes candidatures</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>Mon profil</h2>
+        <p>Tenez vos informations à jour pour de meilleurs matchs.</p>
+      </div>
+    </div>
+
+    <form class="card" id="form-profil" style="max-width:640px; display:flex; flex-direction:column; gap:20px;">
+      <div class="field">
+        <label for="nom">Nom complet</label>
+        <input type="text" id="nom">
+      </div>
+      <div class="field">
+        <label for="niveau-etude">Niveau d'étude</label>
+        <select id="niveau-etude">
+          <option value="licence1">Bac+1</option>
+          <option value="licence2">Bac+2</option>
+          <option value="licence3">Bac+3</option>
+          <option value="master1">Bac+4</option>
+          <option value="master2">Bac+5</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="universite">Université / École</label>
+        <input type="text" id="universite" placeholder="Ex : UCAD, ESP, ISM...">
+      </div>
+      <div class="field">
+        <label for="domaine">Domaine d'études</label>
+        <select id="domaine">
+          <option value="administration-entreprises">Administration des entreprises</option>
+          <option value="agroalimentaire">Agroalimentaire</option>
+          <option value="audit">Audit et contrôle de gestion</option>
+          <option value="banque-finance-assurance">Banque – Finance – Assurance</option>
+          <option value="btp-construction">BTP – Construction</option>
+          <option value="commerce-international">Commerce international</option>
+          <option value="gestion">Comptabilité et gestion</option>
+          <option value="culture-evenementiel">Culture – Événementiel</option>
+          <option value="education-formation">Éducation – Formation</option>
+          <option value="energie-environnement">Énergie – Environnement</option>
+          <option value="gestion-projet">Gestion de projet</option>
+          <option value="affaires-juridiques-fiscales">Gestion des affaires juridiques et fiscales</option>
+          <option value="rh">Gestion des ressources humaines</option>
+          <option value="logistique-transport">Gestion des transports et de la logistique</option>
+          <option value="hotellerie-tourisme">Gestion hôtelière et touristique</option>
+          <option value="immobilier">Immobilier</option>
+          <option value="commerce-general">Import-Export – Commerce général</option>
+          <option value="industrie-production">Industrie – Production</option>
+          <option value="informatique">Informatique de gestion</option>
+          <option value="journalisme">Journalisme – Communication</option>
+          <option value="qualite">Management de la qualité</option>
+          <option value="marketing">Marketing – Communication</option>
+          <option value="ong-developpement">ONG – Développement</option>
+          <option value="sante">Santé</option>
+          <option value="telecoms-reseaux">Télécoms – Réseaux</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="competences">Compétences (séparées par une virgule)</label>
+        <input type="text" id="competences">
+      </div>
+      <div class="field">
+        <label for="cv-lien">Lien vers votre CV</label>
+        <input type="url" id="cv-lien" placeholder="Lien Google Drive, OneDrive...">
+        <p class="hint">Collez un lien de partage vers votre CV en ligne (Drive, OneDrive...).</p>
+      </div>
+      <p id="confirmation-profil" style="display:none; color:var(--success); font-weight:600;">✓ Profil mis à jour.</p>
+      <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Enregistrer les modifications</button>
+    </form>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  let uidCourant = null;
+
+  protegerPage(["candidat"], "../connexion.html", (profil) => {
+    uidCourant = profil.uid;
+    document.getElementById("nom-candidat-side").textContent = profil.nom;
+    document.getElementById("nom").value = profil.nom || "";
+    document.getElementById("niveau-etude").value = profil.niveauEtude || "licence3";
+    document.getElementById("universite").value = profil.universite || "";
+    document.getElementById("domaine").value = profil.domaine || "informatique";
+    document.getElementById("competences").value = (profil.competences || []).join(", ");
+    document.getElementById("cv-lien").value = profil.cvLien || "";
+  });
+
+  document.getElementById("form-profil").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!uidCourant) return;
+
+    const donnees = {
+      nom: document.getElementById("nom").value.trim(),
+      niveauEtude: document.getElementById("niveau-etude").value,
+      universite: document.getElementById("universite").value.trim(),
+      domaine: document.getElementById("domaine").value,
+      competences: document.getElementById("competences").value.split(",").map((c) => c.trim()).filter(Boolean),
+      cvLien: document.getElementById("cv-lien").value.trim(),
+    };
+
+    const bouton = e.target.querySelector("button[type=submit]");
+    bouton.disabled = true;
+    bouton.textContent = "Enregistrement...";
+
+    try {
+      await db.collection("utilisateurs").doc(uidCourant).update(donnees);
+      document.getElementById("confirmation-profil").style.display = "block";
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'enregistrement du profil.");
+    } finally {
+      bouton.disabled = false;
+      bouton.textContent = "Enregistrer les modifications";
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 // =============================================================
-// StagePasse — Service d'authentification (Firebase Auth + Firestore)
+// Talent'Up SN — Service d'authentification (Firebase Auth + Firestore)
 // Nécessite firebase-config.js chargé avant ce fichier.
 // =============================================================
 
@@ -7,7 +7,7 @@
  * Crée un compte (Auth) puis son profil (Firestore, collection "utilisateurs").
  * @param {string} email
  * @param {string} password
- * @param {"etudiant"|"entreprise"} role
+ * @param {"candidat"|"entreprise"} role
  * @param {object} profileData - champs propres au rôle (nom, domaine, competences, etc.)
  */
 async function inscrireUtilisateur(email, password, role, profileData) {
@@ -66,7 +66,7 @@ async function reinitialiserMotDePasse(email) {
  * ou si le rôle du profil ne fait pas partie des rôles autorisés.
  * Appelle callback(profil) une fois la vérification réussie.
  *
- * @param {string[]} rolesAutorises - ex: ["etudiant"]
+ * @param {string[]} rolesAutorises - ex: ["candidat"]
  * @param {string} cheminConnexion - chemin relatif vers connexion.html depuis la page courante
  * @param {(profil: object) => void} callback
  */

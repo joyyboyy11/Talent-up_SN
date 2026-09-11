@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mes candidatures — Talent'Up SN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
+    <div class="nav-actions">
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong id="nom-candidat-side">—</strong>Compte candidat</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html">Tableau de bord</a></li>
+      <li><a href="../offres.html">Offres d'emploi</a></li>
+      <li><a href="../formation.html">Formation &amp; Coaching</a></li>
+      <li><a href="profil.html">Mon profil</a></li>
+      <li><a href="candidatures.html" class="active">Mes candidatures</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>Mes candidatures</h2>
+        <p id="sous-titre-candidatures">Chargement...</p>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Offre</th>
+          <th>Entreprise</th>
+          <th>Date</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody id="corps-tableau-candidatures">
+        <tr><td colspan="4">Chargement...</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  protegerPage(["candidat"], "../connexion.html", async (profil) => {
+    document.getElementById("nom-candidat-side").textContent = profil.nom;
+
+    const candidatures = await chargerCandidaturesCandidat(profil.uid);
+    document.getElementById("sous-titre-candidatures").textContent =
+      `${candidatures.length} candidature${candidatures.length > 1 ? "s" : ""} envoyée${candidatures.length > 1 ? "s" : ""} depuis votre inscription.`;
+
+    const tries = candidatures.slice().sort((a, b) => (b.dateEnvoi?.seconds || 0) - (a.dateEnvoi?.seconds || 0));
+
+    const corps = document.getElementById("corps-tableau-candidatures");
+    corps.innerHTML = tries.length
+      ? tries.map((c) => `
+        <tr>
+          <td>${c.offreTitre}</td>
+          <td>${c.entrepriseNom}</td>
+          <td>${formaterDate(c.dateEnvoi)}</td>
+          <td><span class="badge ${classeBadgeStatut(c.statut)}">${libelleStatutCandidature(c.statut)}</span></td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="4">Vous n'avez pas encore postulé. <a href="../offres.html">Voir les offres</a></td></tr>`;
+  });
+</script>
+</body>
+</html>

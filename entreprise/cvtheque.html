@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CVthèque — Talent'Up SN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
+    <div class="nav-actions">
+      <span id="nom-entreprise-topbar" style="font-size:.85rem; color:var(--slate);"></span>
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong id="nom-entreprise-side">—</strong>Compte entreprise</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html">Tableau de bord</a></li>
+      <li><a href="publier-offre.html">Publier une offre</a></li>
+      <li><a href="cvtheque.html" class="active">CVthèque</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>CVthèque</h2>
+        <p>Consultez les profils de candidats inscrits sur Talent'Up SN.</p>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="field">
+        <label for="filtre-recherche">Recherche</label>
+        <input type="text" id="filtre-recherche" placeholder="Nom, compétence...">
+      </div>
+      <div class="field">
+        <label for="filtre-niveau">Niveau d'étude</label>
+        <select id="filtre-niveau">
+          <option value="">Tous niveaux</option>
+          <option value="licence1">Bac+1</option>
+          <option value="licence2">Bac+2</option>
+          <option value="licence3">Bac+3</option>
+          <option value="master1">Bac+4</option>
+          <option value="master2">Bac+5</option>
+        </select>
+      </div>
+    </div>
+
+    <div data-cv-list class="offer-grid">
+      <p class="hint">Chargement des profils...</p>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  let candidatsCache = [];
+
+  protegerPage(["entreprise"], "../connexion.html", async (profil) => {
+    const nomAffiche = profil.entrepriseNom || profil.nom;
+    document.getElementById("nom-entreprise-topbar").textContent = nomAffiche;
+    document.getElementById("nom-entreprise-side").textContent = nomAffiche;
+
+    const list = document.querySelector("[data-cv-list]");
+    try {
+      candidatsCache = await chargerCvtheque();
+    } catch (err) {
+      console.error(err);
+      list.innerHTML = `<div class="empty-state"><h3>Impossible de charger la CVthèque</h3><p>Vérifiez la configuration Firebase (js/firebase-config.js).</p></div>`;
+      return;
+    }
+
+    const recherche = document.querySelector("#filtre-recherche");
+    const niveau = document.querySelector("#filtre-niveau");
+    [recherche, niveau].forEach((el) => el.addEventListener("input", afficherCandidats));
+    afficherCandidats();
+
+    function afficherCandidats() {
+      const q = (recherche.value || "").toLowerCase();
+      const filtres = candidatsCache.filter((c) => {
+        const matchNiveau = !niveau.value || c.niveauEtude === niveau.value;
+        const matchQ = !q
+          || (c.nom || "").toLowerCase().includes(q)
+          || (c.competences || []).some((comp) => comp.toLowerCase().includes(q));
+        return matchNiveau && matchQ;
+      });
+
+      if (!filtres.length) {
+        list.innerHTML = `<div class="empty-state"><h3>Aucun profil ne correspond</h3><p>Essayez d'élargir vos filtres.</p></div>`;
+        return;
+      }
+
+      list.innerHTML = filtres.map((c) => `
+        <div class="offer-card">
+          <div class="offer-top">
+            <div>
+              <h3 style="margin-bottom:2px;">${c.nom || "Candidat"}</h3>
+              <p style="margin:0;">${c.universite || ""}${c.universite && c.domaine ? " · " : ""}${c.domaine || ""}</p>
+            </div>
+          </div>
+          <div class="tag-row">
+            <span class="tag">${labelNiveau(c.niveauEtude)}</span>
+            ${(c.competences || []).slice(0, 4).map((comp) => `<span class="tag">${comp}</span>`).join("")}
+          </div>
+          <div class="tag-row">
+            ${c.cvLien ? `<a href="${c.cvLien}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Voir le CV</a>` : `<span class="hint">CV non renseigné</span>`}
+          </div>
+        </div>
+      `).join("");
+    }
+  });
+</script>
+</body>
+</html>

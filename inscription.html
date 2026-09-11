@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Créer un compte — Talent'up SN</title>
+<title>Créer un compte — Talent'Up SN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
@@ -13,10 +13,12 @@
 
 <header class="topbar">
   <div class="container">
-    <a href="index.html" class="brand"><span class="brand-mark"></span>Talent'up SN</a>
+    <a href="index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
     <ul class="nav-links">
       <li><a href="index.html">Accueil</a></li>
-      <li><a href="offres.html">Offres de stage</a></li>
+      <li><a href="offres.html">Offres d'emploi</a></li>
+      <li><a href="formation.html">Formation &amp; Coaching</a></li>
+      <li><a href="tarifs.html">Tarifs entreprises</a></li>
     </ul>
     <div class="nav-actions">
       <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
@@ -32,7 +34,7 @@
       <p style="text-align:center; margin-bottom:28px;">Choisissez votre profil pour commencer.</p>
 
       <div class="role-tabs">
-        <button type="button" class="role-tab active" data-role="etudiant">Étudiant</button>
+        <button type="button" class="role-tab active" data-role="candidat">Candidat</button>
         <button type="button" class="role-tab" data-role="entreprise">Entreprise</button>
       </div>
 
@@ -46,8 +48,8 @@
         <p class="hint">6 caractères minimum.</p>
       </div>
 
-      <!-- Champs spécifiques étudiant -->
-      <div data-role-panel="etudiant">
+      <!-- Champs spécifiques candidat -->
+      <div data-role-panel="candidat">
         <div class="field">
           <label for="nom">Nom complet</label>
           <input type="text" id="nom" name="nom" placeholder="Ex : Awa Ndiaye" required>
@@ -55,11 +57,11 @@
         <div class="field">
           <label for="niveau-etude">Niveau d'étude</label>
           <select id="niveau-etude" name="niveau-etude">
-            <option value="licence1">Licence 1</option>
-            <option value="licence2">Licence 2</option>
-            <option value="licence3">Licence 3</option>
-            <option value="master1">Master 1</option>
-            <option value="master2">Master 2</option>
+            <option value="licence1">Bac+1</option>
+            <option value="licence2">Bac+2</option>
+            <option value="licence3">Bac+3</option>
+            <option value="master1">Bac+4</option>
+            <option value="master2">Bac+5</option>
             <option value="autre">Autre</option>
           </select>
         </div>
@@ -106,13 +108,6 @@
           <label for="cv-lien">Lien vers votre CV</label>
           <input type="url" id="cv-lien" name="cv-lien" placeholder="Lien Google Drive, OneDrive...">
           <p class="hint">Collez un lien de partage vers votre CV en ligne (Drive, OneDrive...).</p>
-        </div>
-        <div class="field">
-          <label>Vos disponibilités</label>
-          <p class="hint" style="margin-top:-4px; margin-bottom:10px;">
-            Ajoutez vos créneaux libres pour un stage (jour + heure de début/fin, entre 8h et 16h). Les créneaux du soir sont réservés à vos cours.
-          </p>
-          <div data-availability-list id="dispo-inscription"></div>
         </div>
       </div>
 
@@ -167,8 +162,7 @@
 
     let profileData = {};
 
-    if (role === "etudiant") {
-      const grille = document.getElementById("dispo-inscription");
+    if (role === "candidat") {
       profileData.nom = document.getElementById("nom").value.trim();
       profileData.niveauEtude = document.getElementById("niveau-etude").value;
       profileData.universite = document.getElementById("universite").value.trim();
@@ -176,7 +170,6 @@
       profileData.competences = document.getElementById("competences").value
         .split(",").map((c) => c.trim()).filter(Boolean);
       profileData.cvLien = document.getElementById("cv-lien").value.trim();
-      profileData.disponibilites = getDisponibilites(grille);
     } else {
       const entrepriseNom = document.getElementById("entreprise-nom").value.trim();
       profileData.nom = entrepriseNom;
@@ -191,7 +184,7 @@
     try {
       await inscrireUtilisateur(email, password, role, profileData);
       const destinations = {
-        etudiant: "etudiant/dashboard.html",
+        candidat: "candidat/dashboard.html",
         entreprise: "entreprise/dashboard.html",
       };
       window.location.href = destinations[role];

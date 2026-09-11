@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Espace admin / RH — Talent'up SN</title>
+<title>Espace admin / RH — Talent'Up SN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
@@ -13,7 +13,7 @@
 
 <header class="topbar">
   <div class="container">
-    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'up SN</a>
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
     <div class="nav-actions">
       <span style="font-size:.85rem; color:var(--slate);">Équipe RH</span>
       <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
@@ -52,8 +52,8 @@
         <div class="stat-label">Offres refusées</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num" id="stat-etudiants">—</div>
-        <div class="stat-label">Étudiants inscrits</div>
+        <div class="stat-num" id="stat-candidats">—</div>
+        <div class="stat-label">Candidats inscrits</div>
       </div>
     </div>
 
@@ -63,7 +63,7 @@
         <tr>
           <th>Offre</th>
           <th>Entreprise</th>
-          <th>Horaires</th>
+          <th>Contrat</th>
           <th>Statut</th>
           <th>Action</th>
         </tr>
@@ -102,7 +102,7 @@
     document.getElementById("stat-en-attente").textContent = stats.nbOffresEnAttente;
     document.getElementById("stat-validees").textContent = stats.nbOffresValidees;
     document.getElementById("stat-refusees").textContent = stats.nbOffresRefusees;
-    document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
+    document.getElementById("stat-candidats").textContent = stats.nbCandidats;
 
     const corps = document.getElementById("corps-tableau-validation");
     corps.innerHTML = enAttente.length
@@ -110,7 +110,7 @@
         <tr data-offre-id="${o.id}">
           <td>${o.titre}</td>
           <td>${o.entrepriseNom || "—"}</td>
-          <td>${labelHoraire(o.horaire)}</td>
+          <td>${labelContrat(o.typeContrat)}</td>
           <td><span class="badge badge-warning">En attente</span></td>
           <td>
             <button class="btn btn-sm btn-primary" data-action="valider">Valider</button>

@@ -1,5 +1,5 @@
 // =============================================================
-// Configuration Firebase — StagePasse
+// Configuration Firebase — Talent'Up SN
 // -------------------------------------------------------------
 // 1. Va sur https://console.firebase.google.com
 // 2. Crée un projet (ou ouvre le tien)

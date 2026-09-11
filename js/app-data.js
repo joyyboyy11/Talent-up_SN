@@ -1,5 +1,5 @@
 // =============================================================
-// StagePasse — Accès aux données Firestore
+// Talent'Up SN — Accès aux données Firestore
 // Nécessite firebase-config.js chargé avant ce fichier.
 // =============================================================
 
@@ -38,69 +38,81 @@ async function refuserOffre(offreId) {
   await db.collection("offres").doc(offreId).update({ statut: "refusee" });
 }
 
-/* ---------- Score de compatibilité ----------
-   60% compétences en commun (offre.competences ∩ profil.competences)
-   40% compatibilité horaire (offre "flexible" = compatible d'office ;
-   offre "jour" = compatible si l'étudiant a coché au moins 3 créneaux
-   de journée dans ses disponibilités). */
+/* ---------- CVthèque ---------- */
 
-function calculerScoreMatch(offre, profilEtudiant) {
+async function chargerCvtheque() {
+  const snap = await db.collection("utilisateurs").where("role", "==", "candidat").get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/* ---------- Score de présélection ----------
+   Pondération indicative (ajustable selon les retours des recruteurs) :
+   70% correspondance des compétences requises (offre.competences ∩
+   profil.competences), 30% adéquation globale du profil (niveau
+   d'étude par rapport au niveau requis, CV déposé, expérience).
+   La décision finale reste sous contrôle humain via la revue
+   manuelle de l'équipe RH (validation des offres, statut des
+   candidatures). */
+
+function calculerScoreMatch(offre, profilCandidat) {
   const competencesOffre = (offre.competences || []).map((c) => c.toLowerCase().trim());
-  const competencesEtudiant = (profilEtudiant.competences || []).map((c) => c.toLowerCase().trim());
+  const competencesCandidat = (profilCandidat.competences || []).map((c) => c.toLowerCase().trim());
 
   let scoreCompetences = 0;
   if (competencesOffre.length) {
     const communes = competencesOffre.filter((c) =>
-      competencesEtudiant.some((e) => e.includes(c) || c.includes(e))
+      competencesCandidat.some((e) => e.includes(c) || c.includes(e))
     );
     scoreCompetences = communes.length / competencesOffre.length;
   } else {
     scoreCompetences = 0.5; // pas d'exigence précisée par l'offre
   }
 
-  const nbCreneauxDisponibles = (profilEtudiant.disponibilites || []).length;
-  let scoreHoraire;
-  if (offre.horaire === "flexible") {
-    scoreHoraire = 1;
-  } else {
-    scoreHoraire = nbCreneauxDisponibles >= 3 ? 1 : nbCreneauxDisponibles / 3;
+  const NIVEAUX = ["licence1", "licence2", "licence3", "master1", "master2"];
+  let scoreNiveau = 0.5;
+  if (offre.niveauRequis) {
+    const idxRequis = NIVEAUX.indexOf(offre.niveauRequis);
+    const idxCandidat = NIVEAUX.indexOf(profilCandidat.niveauEtude);
+    scoreNiveau = idxCandidat >= idxRequis && idxCandidat !== -1 ? 1 : 0.3;
   }
+  const scoreCv = profilCandidat.cvUrl || profilCandidat.cv ? 1 : 0.4;
+  const scoreProfil = scoreNiveau * 0.6 + scoreCv * 0.4;
 
-  const score = scoreCompetences * 0.6 + scoreHoraire * 0.4;
+  const score = scoreCompetences * 0.7 + scoreProfil * 0.3;
   return Math.round(score * 100);
 }
 
 /* ---------- Candidatures ---------- */
 
-async function aDejaPostule(etudiantId, offreId) {
+async function aDejaPostule(candidatId, offreId) {
   const snap = await db.collection("candidatures")
-    .where("etudiantId", "==", etudiantId)
+    .where("candidatId", "==", candidatId)
     .where("offreId", "==", offreId)
     .limit(1)
     .get();
   return !snap.empty;
 }
 
-async function postulerOffre(offre, profilEtudiant, etudiantId) {
-  if (await aDejaPostule(etudiantId, offre.id)) {
+async function postulerOffre(offre, profilCandidat, candidatId) {
+  if (await aDejaPostule(candidatId, offre.id)) {
     throw new Error("candidature-existante");
   }
-  const score = calculerScoreMatch(offre, profilEtudiant);
+  const score = calculerScoreMatch(offre, profilCandidat);
   return db.collection("candidatures").add({
     offreId: offre.id,
     offreTitre: offre.titre,
     entrepriseId: offre.entrepriseId,
     entrepriseNom: offre.entrepriseNom,
-    etudiantId,
-    etudiantNom: profilEtudiant.nom,
+    candidatId,
+    candidatNom: profilCandidat.nom,
     matchScore: score,
     statut: "envoyee",
     dateEnvoi: firebase.firestore.FieldValue.serverTimestamp(),
   });
 }
 
-async function chargerCandidaturesEtudiant(etudiantId) {
-  const snap = await db.collection("candidatures").where("etudiantId", "==", etudiantId).get();
+async function chargerCandidaturesCandidat(candidatId) {
+  const snap = await db.collection("candidatures").where("candidatId", "==", candidatId).get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
@@ -127,14 +139,14 @@ async function chargerStatistiquesAdmin() {
   const candidatures = candidaturesSnap.docs.map((d) => d.data());
 
   return {
-    nbEtudiants: utilisateurs.filter((u) => u.role === "etudiant").length,
+    nbCandidats: utilisateurs.filter((u) => u.role === "candidat").length,
     nbEntreprises: utilisateurs.filter((u) => u.role === "entreprise").length,
     nbOffresEnAttente: offres.filter((o) => o.statut === "en_attente").length,
     nbOffresValidees: offres.filter((o) => o.statut === "validee").length,
     nbOffresRefusees: offres.filter((o) => o.statut === "refusee").length,
     candidatures,
     nbCandidatures: candidatures.length,
-    nbStagesObtenus: candidatures.filter((c) => c.statut === "acceptee").length,
+    nbEmploisObtenus: candidatures.filter((c) => c.statut === "acceptee").length,
   };
 }
 
@@ -150,7 +162,7 @@ function libelleStatutCandidature(statut) {
     envoyee: "Envoyée",
     vue: "Vue",
     entretien: "Entretien",
-    acceptee: "Acceptée",
+    acceptee: "Recruté(e)",
     refusee: "Refusée",
   }[statut] || statut;
 }
