@@ -174,11 +174,13 @@ async function chargerStatistiquesAdmin() {
   return {
     nbEtudiants: utilisateurs.filter((u) => u.role === "etudiant").length,
     nbEntreprises: utilisateurs.filter((u) => u.role === "entreprise").length,
+    nbOffresTotal: offres.length,
     nbOffresEnAttente: offres.filter((o) => o.statut === "en_attente").length,
     nbOffresValidees: offres.filter((o) => o.statut === "validee").length,
     nbOffresRefusees: offres.filter((o) => o.statut === "refusee").length,
     candidatures,
     nbCandidatures: candidatures.length,
+    nbEntretiens: candidatures.filter((c) => c.statut === "entretien").length,
     nbRecrutements: candidatures.filter((c) => c.statut === "acceptee").length,
     nbDemandesCoaching: demandesCoaching.length,
     nbDemandesCoachingNouvelles: demandesCoaching.filter((d) => (d.statut || "nouvelle") === "nouvelle").length,

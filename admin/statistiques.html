@@ -49,14 +49,30 @@
         <div class="stat-label">Entreprises partenaires</div>
       </div>
       <div class="stat-card">
+        <div class="stat-num" id="stat-offres-total">—</div>
+        <div class="stat-label">Offres publiées</div>
+      </div>
+      <div class="stat-card">
         <div class="stat-num" id="stat-candidatures">—</div>
         <div class="stat-label">Candidatures envoyées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-entretiens">—</div>
+        <div class="stat-label">Entretiens obtenus</div>
       </div>
       <div class="stat-card">
         <div class="stat-num" id="stat-recrutements">—</div>
         <div class="stat-label">Recrutements réalisés</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-taux-placement">—</div>
+        <div class="stat-label">Taux de placement</div>
+      </div>
     </div>
+    <p class="hint" style="margin-top:-24px; margin-bottom:28px;">
+      Indicateurs de suivi retenus dans l'étude d'impact du Business Plan. Le délai moyen de recrutement
+      et le niveau de satisfaction des entreprises seront mesurés une fois un volume d'activité suffisant atteint.
+    </p>
 
     <h3 style="margin-bottom:14px;">Répartition des candidatures par statut</h3>
     <div class="table-scroll">
@@ -98,8 +114,12 @@
 
     document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
     document.getElementById("stat-entreprises").textContent = stats.nbEntreprises;
+    document.getElementById("stat-offres-total").textContent = stats.nbOffresTotal;
     document.getElementById("stat-candidatures").textContent = stats.nbCandidatures;
+    document.getElementById("stat-entretiens").textContent = stats.nbEntretiens;
     document.getElementById("stat-recrutements").textContent = stats.nbRecrutements;
+    document.getElementById("stat-taux-placement").textContent =
+      stats.nbCandidatures ? Math.round((stats.nbRecrutements / stats.nbCandidatures) * 100) + "%" : "—";
 
     const total = stats.nbCandidatures || 1;
     const parStatut = {};
