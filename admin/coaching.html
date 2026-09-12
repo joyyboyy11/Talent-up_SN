@@ -76,8 +76,15 @@
   const ETAPES = ["nouvelle", "contactee", "planifiee", "terminee"];
 
   protegerPage(["admin"], "../connexion.html", async () => {
-    demandesCache = await chargerDemandesCoaching();
-    afficherDemandes();
+    try {
+      demandesCache = await chargerDemandesCoaching();
+      afficherDemandes();
+    } catch (err) {
+      console.error(err);
+      document.getElementById("liste-demandes-coaching").innerHTML =
+        `<div class="empty-state"><h3 style="color:var(--danger);">Erreur de chargement</h3><p>${err.code || err.message}. Vérifiez les règles Firestore (collection "demandesCoaching").</p></div>`;
+      return;
+    }
     document.getElementById("filtre-statut-coaching").addEventListener("input", afficherDemandes);
   });
 

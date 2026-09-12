@@ -102,8 +102,15 @@
   let candidaturesCache = [];
 
   protegerPage(["admin"], "../connexion.html", async () => {
-    candidaturesCache = await chargerToutesCandidatures();
-    afficherCandidatures();
+    try {
+      candidaturesCache = await chargerToutesCandidatures();
+      afficherCandidatures();
+    } catch (err) {
+      console.error(err);
+      document.getElementById("corps-tableau-candidatures").innerHTML =
+        `<tr><td colspan="6" style="color:var(--danger);">Erreur de chargement (${err.code || err.message}). Vérifiez les règles Firestore (collection "candidatures").</td></tr>`;
+      return;
+    }
 
     const statut = document.getElementById("filtre-statut");
     const recherche = document.getElementById("filtre-recherche");

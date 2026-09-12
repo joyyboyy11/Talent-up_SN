@@ -86,7 +86,15 @@
   });
 
   protegerPage(["admin"], "../connexion.html", async () => {
-    const stats = await chargerStatistiquesAdmin();
+    let stats;
+    try {
+      stats = await chargerStatistiquesAdmin();
+    } catch (err) {
+      console.error(err);
+      document.getElementById("corps-tableau-repartition").innerHTML =
+        `<tr><td colspan="3" style="color:var(--danger);">Erreur de chargement (${err.code || err.message}). Vérifiez les règles Firestore.</td></tr>`;
+      return;
+    }
 
     document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
     document.getElementById("stat-entreprises").textContent = stats.nbEntreprises;

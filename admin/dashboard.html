@@ -96,7 +96,13 @@
   });
 
   protegerPage(["admin"], "../connexion.html", async () => {
-    await chargerDonnees();
+    try {
+      await chargerDonnees();
+    } catch (err) {
+      console.error(err);
+      document.getElementById("corps-tableau-validation").innerHTML =
+        `<tr><td colspan="5" style="color:var(--danger);">Erreur de chargement (${err.code || err.message}). Vérifiez les règles Firestore.</td></tr>`;
+    }
   });
 
   async function chargerDonnees() {
