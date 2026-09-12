@@ -127,7 +127,11 @@
       e.target.reset();
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de l'envoi de votre demande. Réessayez.");
+      if (err.code === "permission-denied") {
+        alert("Votre demande n'a pas pu être enregistrée (accès refusé par la base de données). Contactez l'administrateur du site : les règles de sécurité Firestore doivent être mises à jour pour autoriser la collection \"demandesCoaching\".");
+      } else {
+        alert("Erreur lors de l'envoi de votre demande. Réessayez.");
+      }
     } finally {
       bouton.disabled = false;
       bouton.textContent = "Envoyer ma demande";

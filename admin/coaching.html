@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demandes de coaching — Talent'Up SN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
+    <div class="nav-actions">
+      <span style="font-size:.85rem; color:var(--slate);">Équipe RH</span>
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong>Équipe RH</strong>Compte administrateur</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html">Validation des offres</a></li>
+      <li><a href="candidatures.html">Présélection candidatures</a></li>
+      <li><a href="coaching.html" class="active">Demandes de coaching</a></li>
+      <li><a href="statistiques.html">Statistiques</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>Demandes de coaching &amp; formation</h2>
+        <p>Messages envoyés par les candidats depuis le module Formation &amp; Coaching.</p>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="field">
+        <label for="filtre-statut-coaching">Statut</label>
+        <select id="filtre-statut-coaching">
+          <option value="">Tous les statuts</option>
+          <option value="nouvelle">Nouvelle</option>
+          <option value="contactee">Candidat contacté</option>
+          <option value="planifiee">Séance planifiée</option>
+          <option value="terminee">Terminée</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="liste-demandes-coaching" class="offer-grid" style="grid-template-columns:1fr;">
+      <p class="hint">Chargement...</p>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  let demandesCache = [];
+  const ETAPES = ["nouvelle", "contactee", "planifiee", "terminee"];
+
+  protegerPage(["admin"], "../connexion.html", async () => {
+    demandesCache = await chargerDemandesCoaching();
+    afficherDemandes();
+    document.getElementById("filtre-statut-coaching").addEventListener("input", afficherDemandes);
+  });
+
+  function afficherDemandes() {
+    const statutVoulu = document.getElementById("filtre-statut-coaching").value;
+    const liste = demandesCache
+      .filter((d) => !statutVoulu || (d.statut || "nouvelle") === statutVoulu)
+      .slice()
+      .sort((a, b) => (b.dateCreation?.seconds || 0) - (a.dateCreation?.seconds || 0));
+
+    const conteneur = document.getElementById("liste-demandes-coaching");
+    conteneur.innerHTML = liste.length
+      ? liste.map((d) => {
+          const statutActuel = d.statut || "nouvelle";
+          const prochaineEtape = ETAPES[ETAPES.indexOf(statutActuel) + 1];
+          return `
+        <div class="offer-card" data-demande-id="${d.id}">
+          <div class="offer-top">
+            <div>
+              <h3 style="margin-bottom:2px;">${d.candidatNom || "Candidat"}</h3>
+              <p style="margin:0; color:var(--slate);">${formaterDate(d.dateCreation)}</p>
+            </div>
+            <span class="badge ${classeBadgeStatutCoaching(statutActuel)}">${libelleStatutCoaching(statutActuel)}</span>
+          </div>
+          <p style="color:var(--slate); margin:10px 0 0;">${d.sujet ? d.sujet : "<em>Aucun message précisé.</em>"}</p>
+          <div class="tag-row" style="margin-top:14px;">
+            ${prochaineEtape
+              ? `<button class="btn btn-primary btn-sm" data-avancer="${prochaineEtape}">Marquer « ${libelleStatutCoaching(prochaineEtape)} »</button>`
+              : ""}
+          </div>
+        </div>
+      `;
+        }).join("")
+      : `<div class="empty-state"><h3>Aucune demande de coaching</h3><p>Les demandes envoyées depuis l'espace candidat apparaîtront ici.</p></div>`;
+
+    conteneur.querySelectorAll("[data-avancer]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const carte = btn.closest("[data-demande-id]");
+        const id = carte.dataset.demandeId;
+        const nouveauStatut = btn.dataset.avancer;
+        carte.querySelectorAll("button").forEach((b) => (b.disabled = true));
+        try {
+          await mettreAJourStatutDemandeCoaching(id, nouveauStatut);
+          const demande = demandesCache.find((d) => d.id === id);
+          if (demande) demande.statut = nouveauStatut;
+          afficherDemandes();
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors de la mise à jour de la demande.");
+          carte.querySelectorAll("button").forEach((b) => (b.disabled = false));
+        }
+      });
+    });
+  }
+</script>
+</body>
+</html>

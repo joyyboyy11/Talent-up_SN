@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Présélection candidatures — Talent'Up SN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
+    <div class="nav-actions">
+      <span style="font-size:.85rem; color:var(--slate);">Équipe RH</span>
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong>Équipe RH</strong>Compte administrateur</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html">Validation des offres</a></li>
+      <li><a href="candidatures.html" class="active">Présélection candidatures</a></li>
+      <li><a href="coaching.html">Demandes de coaching</a></li>
+      <li><a href="statistiques.html">Statistiques</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>Présélection des candidatures</h2>
+        <p>Le score est une aide à la décision (70% compétences, 30% adéquation du profil) : la décision finale reste manuelle.</p>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="field">
+        <label for="filtre-statut">Statut</label>
+        <select id="filtre-statut">
+          <option value="">Tous les statuts</option>
+          <option value="envoyee">Envoyée</option>
+          <option value="vue">Vue</option>
+          <option value="entretien">Entretien</option>
+          <option value="acceptee">Acceptée</option>
+          <option value="refusee">Refusée</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filtre-recherche">Recherche</label>
+        <input type="text" id="filtre-recherche" placeholder="Candidat, offre ou entreprise...">
+      </div>
+      <div class="field">
+        <label for="tri-score">Trier par</label>
+        <select id="tri-score">
+          <option value="date">Date (récentes d'abord)</option>
+          <option value="score-desc">Score (le plus élevé d'abord)</option>
+          <option value="score-asc">Score (le plus faible d'abord)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Candidat</th>
+          <th>Offre</th>
+          <th>Entreprise</th>
+          <th>Score</th>
+          <th>Statut</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="corps-tableau-candidatures">
+        <tr><td colspan="6">Chargement...</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  let candidaturesCache = [];
+
+  protegerPage(["admin"], "../connexion.html", async () => {
+    candidaturesCache = await chargerToutesCandidatures();
+    afficherCandidatures();
+
+    const statut = document.getElementById("filtre-statut");
+    const recherche = document.getElementById("filtre-recherche");
+    const tri = document.getElementById("tri-score");
+    [statut, recherche, tri].forEach((el) => el.addEventListener("input", afficherCandidatures));
+  });
+
+  function afficherCandidatures() {
+    const statutVoulu = document.getElementById("filtre-statut").value;
+    const q = document.getElementById("filtre-recherche").value.toLowerCase();
+    const tri = document.getElementById("tri-score").value;
+
+    let liste = candidaturesCache.filter((c) => {
+      const matchStatut = !statutVoulu || c.statut === statutVoulu;
+      const matchQ = !q ||
+        (c.etudiantNom || "").toLowerCase().includes(q) ||
+        (c.offreTitre || "").toLowerCase().includes(q) ||
+        (c.entrepriseNom || "").toLowerCase().includes(q);
+      return matchStatut && matchQ;
+    });
+
+    liste = liste.slice().sort((a, b) => {
+      if (tri === "score-desc") return (b.matchScore || 0) - (a.matchScore || 0);
+      if (tri === "score-asc") return (a.matchScore || 0) - (b.matchScore || 0);
+      return (b.dateEnvoi?.seconds || 0) - (a.dateEnvoi?.seconds || 0);
+    });
+
+    const corps = document.getElementById("corps-tableau-candidatures");
+    corps.innerHTML = liste.length
+      ? liste.map((c) => `
+        <tr data-candidature-id="${c.id}">
+          <td>${c.etudiantNom || "—"}</td>
+          <td>${c.offreTitre || "—"}</td>
+          <td>${c.entrepriseNom || "—"}</td>
+          <td><span class="offer-match">${typeof c.matchScore === "number" ? c.matchScore + "%" : "—"}</span></td>
+          <td><span class="badge ${classeBadgeStatut(c.statut)}">${libelleStatutCandidature(c.statut)}</span></td>
+          <td>
+            ${c.statut === "acceptee" || c.statut === "refusee"
+              ? "—"
+              : `
+                <button class="btn btn-sm btn-primary" data-action="acceptee">Accepter</button>
+                <button class="btn btn-sm btn-danger-ghost" data-action="refusee">Refuser</button>
+              `}
+          </td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="6">Aucune candidature ne correspond à ces filtres.</td></tr>`;
+
+    corps.querySelectorAll("button[data-action]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const row = btn.closest("tr");
+        const id = row.dataset.candidatureId;
+        row.querySelectorAll("button").forEach((b) => (b.disabled = true));
+        try {
+          await mettreAJourStatutCandidature(id, btn.dataset.action);
+          const candidature = candidaturesCache.find((c) => c.id === id);
+          if (candidature) candidature.statut = btn.dataset.action;
+          afficherCandidatures();
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors de la mise à jour de la candidature.");
+          row.querySelectorAll("button").forEach((b) => (b.disabled = false));
+        }
+      });
+    });
+  }
+</script>
+</body>
+</html>

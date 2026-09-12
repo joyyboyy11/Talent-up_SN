@@ -120,18 +120,56 @@ async function mettreAJourStatutCandidature(candidatureId, statut) {
   await db.collection("candidatures").doc(candidatureId).update({ statut });
 }
 
+/* ---------- Présélection admin/RH (toutes les candidatures) ---------- */
+
+async function chargerToutesCandidatures() {
+  const snap = await db.collection("candidatures").get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/* ---------- Demandes de coaching (module Formation & Coaching) ---------- */
+
+async function chargerDemandesCoaching() {
+  const snap = await db.collection("demandesCoaching").get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+async function mettreAJourStatutDemandeCoaching(demandeId, statut) {
+  await db.collection("demandesCoaching").doc(demandeId).update({ statut });
+}
+
+function libelleStatutCoaching(statut) {
+  return {
+    nouvelle: "Nouvelle",
+    contactee: "Candidat contacté",
+    planifiee: "Séance planifiée",
+    terminee: "Terminée",
+  }[statut] || statut;
+}
+
+function classeBadgeStatutCoaching(statut) {
+  return {
+    nouvelle: "badge-warning",
+    contactee: "badge-neutral",
+    planifiee: "badge-neutral",
+    terminee: "badge-success",
+  }[statut] || "badge-neutral";
+}
+
 /* ---------- Statistiques admin ---------- */
 
 async function chargerStatistiquesAdmin() {
-  const [utilisateursSnap, offresSnap, candidaturesSnap] = await Promise.all([
+  const [utilisateursSnap, offresSnap, candidaturesSnap, coachingSnap] = await Promise.all([
     db.collection("utilisateurs").get(),
     db.collection("offres").get(),
     db.collection("candidatures").get(),
+    db.collection("demandesCoaching").get(),
   ]);
 
   const utilisateurs = utilisateursSnap.docs.map((d) => d.data());
   const offres = offresSnap.docs.map((d) => d.data());
   const candidatures = candidaturesSnap.docs.map((d) => d.data());
+  const demandesCoaching = coachingSnap.docs.map((d) => d.data());
 
   return {
     nbEtudiants: utilisateurs.filter((u) => u.role === "etudiant").length,
@@ -142,6 +180,8 @@ async function chargerStatistiquesAdmin() {
     candidatures,
     nbCandidatures: candidatures.length,
     nbRecrutements: candidatures.filter((c) => c.statut === "acceptee").length,
+    nbDemandesCoaching: demandesCoaching.length,
+    nbDemandesCoachingNouvelles: demandesCoaching.filter((d) => (d.statut || "nouvelle") === "nouvelle").length,
   };
 }
 

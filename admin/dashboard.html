@@ -26,6 +26,8 @@
     <div class="app-side-user"><strong>Équipe RH</strong>Compte administrateur</div>
     <ul class="app-nav">
       <li><a href="dashboard.html" class="active">Validation des offres</a></li>
+      <li><a href="candidatures.html">Présélection candidatures</a></li>
+      <li><a href="coaching.html">Demandes de coaching</a></li>
       <li><a href="statistiques.html">Statistiques</a></li>
     </ul>
   </aside>
@@ -54,6 +56,10 @@
       <div class="stat-card">
         <div class="stat-num" id="stat-etudiants">—</div>
         <div class="stat-label">Candidats inscrits</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-coaching">—</div>
+        <div class="stat-label">Nouvelles demandes de coaching</div>
       </div>
     </div>
 
@@ -103,6 +109,7 @@
     document.getElementById("stat-validees").textContent = stats.nbOffresValidees;
     document.getElementById("stat-refusees").textContent = stats.nbOffresRefusees;
     document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
+    document.getElementById("stat-coaching").textContent = stats.nbDemandesCoachingNouvelles;
 
     const corps = document.getElementById("corps-tableau-validation");
     corps.innerHTML = enAttente.length
