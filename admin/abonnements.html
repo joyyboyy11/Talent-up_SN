@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demandes d'abonnement — Talent'Up SN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="container">
+    <a href="../index.html" class="brand"><span class="brand-mark"></span>Talent'Up SN</a>
+    <div class="nav-actions">
+      <span style="font-size:.85rem; color:var(--slate);">Équipe RH</span>
+      <a href="#" id="lien-deconnexion" class="btn btn-ghost btn-sm">Déconnexion</a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="app-side">
+    <div class="app-side-user"><strong>Équipe RH</strong>Compte administrateur</div>
+    <ul class="app-nav">
+      <li><a href="dashboard.html">Validation des offres</a></li>
+      <li><a href="candidatures.html">Présélection candidatures</a></li>
+      <li><a href="coaching.html">Demandes de coaching</a></li>
+      <li><a href="abonnements.html" class="active">Demandes d'abonnement</a></li>
+      <li><a href="statistiques.html">Statistiques</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-head">
+      <div>
+        <h2>Demandes d'abonnement</h2>
+        <p>À confirmer uniquement après réception du paiement de l'entreprise (le paiement est géré hors plateforme).</p>
+      </div>
+    </div>
+
+    <div id="liste-demandes-abonnement" class="offer-grid" style="grid-template-columns:1fr;">
+      <p class="hint">Chargement...</p>
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
+<script src="../js/main.js"></script>
+<script>
+  document.getElementById("lien-deconnexion").addEventListener("click", (e) => {
+    e.preventDefault();
+    deconnecterUtilisateur("../connexion.html");
+  });
+
+  const NOMS_PLANS = { starter: "Starter (15 000 FCFA/mois)", business: "Business (35 000 FCFA/mois)", premium: "Premium (75 000 FCFA/mois)" };
+  let demandesCache = [];
+
+  protegerPage(["admin"], "../connexion.html", async () => {
+    try {
+      demandesCache = await chargerDemandesAbonnement();
+    } catch (err) {
+      console.error(err);
+      document.getElementById("liste-demandes-abonnement").innerHTML =
+        `<div class="empty-state"><h3 style="color:var(--danger);">Erreur de chargement</h3><p>${err.code || err.message}.</p></div>`;
+      return;
+    }
+    afficherDemandes();
+  });
+
+  function afficherDemandes() {
+    const conteneur = document.getElementById("liste-demandes-abonnement");
+    conteneur.innerHTML = demandesCache.length
+      ? demandesCache.map((e) => `
+        <div class="offer-card" data-entreprise-uid="${e.uid}">
+          <div class="offer-top">
+            <div>
+              <h3 style="margin-bottom:2px;">${e.entrepriseNom || e.nom}</h3>
+              <p style="margin:0; color:var(--slate);">${e.secteur ? e.secteur : ""}</p>
+            </div>
+            <span class="badge badge-warning">En attente</span>
+          </div>
+          <p style="margin:10px 0 0;">Formule demandée : <strong>${NOMS_PLANS[e.abonnementDemande] || e.abonnementDemande}</strong>${e.abonnement && e.abonnement !== "aucun" ? ` <span class="hint">(formule actuelle : ${NOMS_PLANS[e.abonnement] || e.abonnement})</span>` : ""}</p>
+          <div class="tag-row" style="margin-top:14px;">
+            <button class="btn btn-primary btn-sm" data-confirmer>Confirmer (paiement reçu)</button>
+            <button class="btn btn-danger-ghost btn-sm" data-refuser>Refuser</button>
+          </div>
+        </div>
+      `).join("")
+      : `<div class="empty-state"><h3>Aucune demande en attente</h3><p>Les demandes envoyées depuis la page tarifs d'une entreprise apparaîtront ici.</p></div>`;
+
+    conteneur.querySelectorAll("[data-confirmer]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const carte = btn.closest("[data-entreprise-uid]");
+        const uid = carte.dataset.entrepriseUid;
+        const demande = demandesCache.find((d) => d.uid === uid);
+        carte.querySelectorAll("button").forEach((b) => (b.disabled = true));
+        try {
+          await confirmerAbonnement(uid, demande.abonnementDemande);
+          demandesCache = demandesCache.filter((d) => d.uid !== uid);
+          afficherDemandes();
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors de la confirmation.");
+          carte.querySelectorAll("button").forEach((b) => (b.disabled = false));
+        }
+      });
+    });
+
+    conteneur.querySelectorAll("[data-refuser]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const carte = btn.closest("[data-entreprise-uid]");
+        const uid = carte.dataset.entrepriseUid;
+        if (!confirm("Refuser cette demande d'abonnement ?")) return;
+        carte.querySelectorAll("button").forEach((b) => (b.disabled = true));
+        try {
+          await refuserDemandeAbonnement(uid);
+          demandesCache = demandesCache.filter((d) => d.uid !== uid);
+          afficherDemandes();
+        } catch (err) {
+          console.error(err);
+          alert("Erreur lors du refus.");
+          carte.querySelectorAll("button").forEach((b) => (b.disabled = false));
+        }
+      });
+    });
+  }
+</script>
+</body>
+</html>

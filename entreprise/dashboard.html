@@ -27,6 +27,7 @@
     <ul class="app-nav">
       <li><a href="dashboard.html" class="active">Tableau de bord</a></li>
       <li><a href="publier-offre.html">Publier une offre</a></li>
+      <li><a href="cvtheque.html">CVthèque</a></li>
       <li><a href="tarifs.html">Mon abonnement</a></li>
     </ul>
   </aside>
@@ -162,8 +163,16 @@
           </div>
           <div class="tag-row">
             <span class="badge ${classeBadgeStatut(c.statut)}">${libelleStatutCandidature(c.statut)}</span>
+            ${c.etudiantNiveauEtude ? `<span class="tag">${labelNiveau(c.etudiantNiveauEtude)}</span>` : ""}
+            ${c.etudiantDomaine ? `<span class="tag">${c.etudiantDomaine}</span>` : ""}
+            ${c.etudiantUniversite ? `<span class="tag">${c.etudiantUniversite}</span>` : ""}
           </div>
+          ${(c.etudiantCompetences || []).length ? `
           <div class="tag-row">
+            ${c.etudiantCompetences.map((comp) => `<span class="tag">${comp}</span>`).join("")}
+          </div>` : ""}
+          <div class="tag-row">
+            ${c.etudiantCvLien ? `<a href="${c.etudiantCvLien}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Voir le CV</a>` : `<span class="hint">CV non renseigné par le candidat.</span>`}
             ${
               c.statut === "entretien"
                 ? `

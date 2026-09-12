@@ -28,6 +28,7 @@
       <li><a href="dashboard.html">Validation des offres</a></li>
       <li><a href="candidatures.html" class="active">Présélection candidatures</a></li>
       <li><a href="coaching.html">Demandes de coaching</a></li>
+      <li><a href="abonnements.html">Demandes d'abonnement</a></li>
       <li><a href="statistiques.html">Statistiques</a></li>
     </ul>
   </aside>
@@ -71,6 +72,7 @@
       <thead>
         <tr>
           <th>Candidat</th>
+          <th>Profil</th>
           <th>Offre</th>
           <th>Entreprise</th>
           <th>Score</th>
@@ -79,7 +81,7 @@
         </tr>
       </thead>
       <tbody id="corps-tableau-candidatures">
-        <tr><td colspan="6">Chargement...</td></tr>
+        <tr><td colspan="7">Chargement...</td></tr>
       </tbody>
     </table>
     </div>
@@ -108,7 +110,7 @@
     } catch (err) {
       console.error(err);
       document.getElementById("corps-tableau-candidatures").innerHTML =
-        `<tr><td colspan="6" style="color:var(--danger);">Erreur de chargement (${err.code || err.message}). Vérifiez les règles Firestore (collection "candidatures").</td></tr>`;
+        `<tr><td colspan="7" style="color:var(--danger);">Erreur de chargement (${err.code || err.message}). Vérifiez les règles Firestore (collection "candidatures").</td></tr>`;
       return;
     }
 
@@ -143,6 +145,10 @@
       ? liste.map((c) => `
         <tr data-candidature-id="${c.id}">
           <td>${c.etudiantNom || "—"}</td>
+          <td>
+            ${c.etudiantNiveauEtude ? labelNiveau(c.etudiantNiveauEtude) : "—"}${c.etudiantUniversite ? " · " + c.etudiantUniversite : ""}
+            ${c.etudiantCvLien ? `<br><a href="${c.etudiantCvLien}" target="_blank" rel="noopener">Voir le CV</a>` : ""}
+          </td>
           <td>${c.offreTitre || "—"}</td>
           <td>${c.entrepriseNom || "—"}</td>
           <td><span class="offer-match">${typeof c.matchScore === "number" ? c.matchScore + "%" : "—"}</span></td>
@@ -157,7 +163,7 @@
           </td>
         </tr>
       `).join("")
-      : `<tr><td colspan="6">Aucune candidature ne correspond à ces filtres.</td></tr>`;
+      : `<tr><td colspan="7">Aucune candidature ne correspond à ces filtres.</td></tr>`;
 
     corps.querySelectorAll("button[data-action]").forEach((btn) => {
       btn.addEventListener("click", async () => {

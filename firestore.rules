@@ -28,7 +28,12 @@ service cloud.firestore {
 
     // ---------- Collection utilisateurs ----------
     match /utilisateurs/{userId} {
-      allow read: if estConnecte() && (request.auth.uid == userId || estAdmin());
+      // Une entreprise connectée peut consulter les profils candidats (CVthèque),
+      // en plus de l'accès habituel à son propre profil et de l'accès admin.
+      allow read: if estConnecte() &&
+                  (request.auth.uid == userId
+                   || estAdmin()
+                   || (resource.data.role == "etudiant" && monRole() == "entreprise"));
 
       allow create: if estConnecte() && request.auth.uid == userId
                     && request.resource.data.role in ["etudiant", "entreprise"];
@@ -38,7 +43,11 @@ service cloud.firestore {
                       !("role" in resource.data) ||
                       !("role" in request.resource.data) ||
                       request.resource.data.role == resource.data.role
-                    );
+                    )
+                    // Une entreprise peut demander un abonnement (abonnementDemande / abonnementStatut)
+                    // mais ne peut pas s'attribuer elle-même le champ "abonnement" : seule
+                    // l'équipe RH peut le confirmer, après réception du paiement hors plateforme.
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["abonnement"]);
 
       allow update, delete: if estAdmin();
     }

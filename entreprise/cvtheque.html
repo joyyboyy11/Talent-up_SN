@@ -28,6 +28,7 @@
       <li><a href="dashboard.html">Tableau de bord</a></li>
       <li><a href="publier-offre.html">Publier une offre</a></li>
       <li><a href="cvtheque.html" class="active">CVthèque</a></li>
+      <li><a href="tarifs.html">Mon abonnement</a></li>
     </ul>
   </aside>
 
@@ -35,30 +36,44 @@
     <div class="app-head">
       <div>
         <h2>CVthèque</h2>
-        <p>Consultez les profils de candidats inscrits sur Talent'Up SN.</p>
+        <p>Parcourez les profils des candidats inscrits sur Talent'Up SN.</p>
       </div>
     </div>
+
+    <div id="banniere-abonnement" style="display:none;" class="card"></div>
 
     <div class="filters-bar">
       <div class="field">
         <label for="filtre-recherche">Recherche</label>
-        <input type="text" id="filtre-recherche" placeholder="Nom, compétence...">
+        <input type="text" id="filtre-recherche" placeholder="Nom, université, compétence...">
       </div>
       <div class="field">
-        <label for="filtre-niveau">Niveau d'étude</label>
+        <label for="filtre-domaine">Domaine</label>
+        <select id="filtre-domaine">
+          <option value="">Tous les domaines</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="filtre-niveau">Niveau</label>
         <select id="filtre-niveau">
           <option value="">Tous niveaux</option>
-          <option value="licence1">Bac+1</option>
-          <option value="licence2">Bac+2</option>
-          <option value="licence3">Bac+3</option>
-          <option value="master1">Bac+4</option>
-          <option value="master2">Bac+5</option>
+          <option value="bac2">Bac+2</option>
+          <option value="licence">Licence (Bac+3)</option>
+          <option value="master1">Master 1 (Bac+4)</option>
+          <option value="master2">Master 2 (Bac+5)</option>
+          <option value="ingenieur">Ingénieur / Grande école</option>
         </select>
       </div>
     </div>
 
-    <div data-cv-list class="offer-grid">
-      <p class="hint">Chargement des profils...</p>
+    <div id="liste-cvtheque" class="offer-grid">
+      <p class="hint">Chargement...</p>
+    </div>
+
+    <div id="bloc-verrouille" class="empty-state" style="display:none; margin-top:20px;">
+      <h3>Accès limité avec votre formule actuelle</h3>
+      <p>La formule Starter donne un accès limité à la CVthèque. Passez à Business ou Premium pour consulter tous les profils.</p>
+      <a href="tarifs.html" class="btn btn-amber btn-sm">Voir les formules</a>
     </div>
   </main>
 </div>
@@ -76,6 +91,7 @@
     deconnecterUtilisateur("../connexion.html");
   });
 
+  const LIMITE_STARTER = 5;
   let candidatsCache = [];
 
   protegerPage(["entreprise"], "../connexion.html", async (profil) => {
@@ -83,54 +99,97 @@
     document.getElementById("nom-entreprise-topbar").textContent = nomAffiche;
     document.getElementById("nom-entreprise-side").textContent = nomAffiche;
 
-    const list = document.querySelector("[data-cv-list]");
+    const abonnement = profil.abonnement && profil.abonnement !== "aucun" ? profil.abonnement : null;
+    const accesComplet = abonnement === "business" || abonnement === "premium";
+
+    const banniere = document.getElementById("banniere-abonnement");
+    banniere.style.display = "block";
+    if (!abonnement) {
+      banniere.innerHTML = `<p style="margin:0;">Vous n'avez pas d'abonnement actif : accès limité à ${LIMITE_STARTER} profils. <a href="tarifs.html">Voir les formules</a>.</p>`;
+    } else if (!accesComplet) {
+      banniere.innerHTML = `<p style="margin:0;">Formule <strong>Starter</strong> : accès limité à ${LIMITE_STARTER} profils. <a href="tarifs.html">Passer à Business ou Premium</a> pour un accès complet.</p>`;
+    } else {
+      banniere.innerHTML = `<p style="margin:0;">Formule <strong>${abonnement === "business" ? "Business" : "Premium"}</strong> : accès complet à la CVthèque.</p>`;
+    }
+
     try {
       candidatsCache = await chargerCvtheque();
     } catch (err) {
       console.error(err);
-      list.innerHTML = `<div class="empty-state"><h3>Impossible de charger la CVthèque</h3><p>Vérifiez la configuration Firebase (js/firebase-config.js).</p></div>`;
+      document.getElementById("liste-cvtheque").innerHTML =
+        `<div class="empty-state"><h3 style="color:var(--danger);">Erreur de chargement</h3><p>${err.code || err.message}. Vérifiez les règles Firestore (lecture de la collection "utilisateurs" par une entreprise).</p></div>`;
       return;
     }
 
-    const recherche = document.querySelector("#filtre-recherche");
-    const niveau = document.querySelector("#filtre-niveau");
-    [recherche, niveau].forEach((el) => el.addEventListener("input", afficherCandidats));
-    afficherCandidats();
+    // Construire les options du filtre domaine à partir des profils réellement présents.
+    const domaines = [...new Set(candidatsCache.map((c) => c.domaine).filter(Boolean))].sort();
+    const selectDomaine = document.getElementById("filtre-domaine");
+    domaines.forEach((d) => {
+      const option = document.createElement("option");
+      option.value = d;
+      option.textContent = d;
+      selectDomaine.appendChild(option);
+    });
 
-    function afficherCandidats() {
-      const q = (recherche.value || "").toLowerCase();
-      const filtres = candidatsCache.filter((c) => {
-        const matchNiveau = !niveau.value || c.niveauEtude === niveau.value;
-        const matchQ = !q
-          || (c.nom || "").toLowerCase().includes(q)
-          || (c.competences || []).some((comp) => comp.toLowerCase().includes(q));
-        return matchNiveau && matchQ;
-      });
+    afficherCvtheque(accesComplet);
 
-      if (!filtres.length) {
-        list.innerHTML = `<div class="empty-state"><h3>Aucun profil ne correspond</h3><p>Essayez d'élargir vos filtres.</p></div>`;
-        return;
-      }
+    [document.getElementById("filtre-recherche"), selectDomaine, document.getElementById("filtre-niveau")]
+      .forEach((el) => el.addEventListener("input", () => afficherCvtheque(accesComplet)));
+  });
 
-      list.innerHTML = filtres.map((c) => `
+  function afficherCvtheque(accesComplet) {
+    const q = document.getElementById("filtre-recherche").value.toLowerCase();
+    const domaine = document.getElementById("filtre-domaine").value;
+    const niveau = document.getElementById("filtre-niveau").value;
+
+    let filtres = candidatsCache.filter((c) => {
+      const matchDomaine = !domaine || c.domaine === domaine;
+      const matchNiveau = !niveau || c.niveauEtude === niveau;
+      const matchQ = !q ||
+        (c.nom || "").toLowerCase().includes(q) ||
+        (c.universite || "").toLowerCase().includes(q) ||
+        (c.competences || []).some((comp) => comp.toLowerCase().includes(q));
+      return matchDomaine && matchNiveau && matchQ;
+    });
+
+    const total = filtres.length;
+    const bloc = document.getElementById("bloc-verrouille");
+    let masques = 0;
+    if (!accesComplet && filtres.length > LIMITE_STARTER) {
+      masques = filtres.length - LIMITE_STARTER;
+      filtres = filtres.slice(0, LIMITE_STARTER);
+    }
+    bloc.style.display = masques > 0 ? "block" : "none";
+    if (masques > 0) {
+      bloc.querySelector("p").textContent =
+        `La formule Starter donne un accès limité à la CVthèque. ${masques} profil(s) supplémentaire(s) correspondant à vos filtres sont masqués. Passez à Business ou Premium pour tous les consulter.`;
+    }
+
+    const conteneur = document.getElementById("liste-cvtheque");
+    conteneur.innerHTML = total
+      ? filtres.map((c) => `
         <div class="offer-card">
           <div class="offer-top">
             <div>
               <h3 style="margin-bottom:2px;">${c.nom || "Candidat"}</h3>
-              <p style="margin:0;">${c.universite || ""}${c.universite && c.domaine ? " · " : ""}${c.domaine || ""}</p>
+              <p style="margin:0;">${c.universite || ""}</p>
             </div>
           </div>
           <div class="tag-row">
-            <span class="tag">${labelNiveau(c.niveauEtude)}</span>
-            ${(c.competences || []).slice(0, 4).map((comp) => `<span class="tag">${comp}</span>`).join("")}
+            ${c.niveauEtude ? `<span class="tag">${labelNiveau(c.niveauEtude)}</span>` : ""}
+            ${c.domaine ? `<span class="tag">${c.domaine}</span>` : ""}
           </div>
+          ${(c.competences || []).length ? `
           <div class="tag-row">
-            ${c.cvLien ? `<a href="${c.cvLien}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Voir le CV</a>` : `<span class="hint">CV non renseigné</span>`}
+            ${c.competences.map((comp) => `<span class="tag">${comp}</span>`).join("")}
+          </div>` : ""}
+          <div class="tag-row">
+            ${c.cvLien ? `<a href="${c.cvLien}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Voir le CV</a>` : `<span class="hint">CV non renseigné par le candidat.</span>`}
           </div>
         </div>
-      `).join("");
-    }
-  });
+      `).join("")
+      : `<div class="empty-state"><h3>Aucun profil ne correspond</h3><p>Essayez d'élargir vos filtres.</p></div>`;
+  }
 </script>
 </body>
 </html>

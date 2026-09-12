@@ -111,6 +111,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="../js/firebase-config.js"></script>
 <script src="../js/auth-service.js"></script>
+<script src="../js/app-data.js"></script>
 <script src="../js/main.js"></script>
 <script>
   const NOMS_PLANS = { starter: "Starter", business: "Business", premium: "Premium" };
@@ -134,33 +135,49 @@
 
     const abonnementActuel = entrepriseConnectee.abonnement && entrepriseConnectee.abonnement !== "aucun"
       ? entrepriseConnectee.abonnement : null;
+    const demandeEnAttente = entrepriseConnectee.abonnementStatut === "en_attente"
+      ? entrepriseConnectee.abonnementDemande : null;
 
     const banniere = document.getElementById("statut-abonnement");
     banniere.style.display = "block";
-    banniere.innerHTML = abonnementActuel
-      ? `<p style="margin:0;"><strong>Abonnement actuel : ${NOMS_PLANS[abonnementActuel] || abonnementActuel}.</strong> Choisissez une autre formule ci-dessous pour en changer.</p>`
-      : `<p style="margin:0;">Vous n'avez pas encore d'abonnement actif. Choisissez une formule ci-dessous.</p>`;
+    if (demandeEnAttente) {
+      banniere.innerHTML = `<p style="margin:0;">Votre demande pour la formule <strong>${NOMS_PLANS[demandeEnAttente] || demandeEnAttente}</strong> est en attente de confirmation par l'équipe RH, après réception du paiement. ${abonnementActuel ? `En attendant, votre formule <strong>${NOMS_PLANS[abonnementActuel]}</strong> reste active.` : ""}</p>`;
+    } else if (abonnementActuel) {
+      banniere.innerHTML = `<p style="margin:0;"><strong>Abonnement actuel : ${NOMS_PLANS[abonnementActuel] || abonnementActuel}.</strong> Choisissez une autre formule ci-dessous pour en faire la demande.</p>`;
+    } else {
+      banniere.innerHTML = `<p style="margin:0;">Vous n'avez pas encore d'abonnement actif. Choisissez une formule ci-dessous : votre demande sera confirmée par l'équipe RH après réception du paiement.</p>`;
+    }
 
     document.querySelectorAll("[data-plan-btn]").forEach((btn) => {
       const plan = btn.dataset.plan;
       btn.setAttribute("href", "#");
+
+      if (demandeEnAttente) {
+        btn.style.pointerEvents = "none";
+        btn.style.opacity = "0.6";
+        btn.textContent = plan === demandeEnAttente ? "Demande envoyée" : "Choisir";
+        btn.classList.add("btn-ghost");
+        btn.classList.remove("btn-amber", "btn-primary");
+        return;
+      }
       if (plan === abonnementActuel) {
         btn.textContent = "✓ Formule actuelle";
         btn.classList.add("btn-ghost");
         btn.classList.remove("btn-amber", "btn-primary");
+        return;
       }
+
       btn.addEventListener("click", async (e) => {
         e.preventDefault();
-        if (plan === abonnementActuel) return;
         const libelle = NOMS_PLANS[plan] || plan;
-        if (!confirm(`Confirmer le passage à la formule ${libelle} ?`)) return;
-        btn.textContent = "Mise à jour...";
+        if (!confirm(`Envoyer une demande pour la formule ${libelle} ? Elle sera activée par l'équipe RH après réception du paiement (voir modalités de paiement communiquées après votre demande).`)) return;
+        btn.textContent = "Envoi...";
         try {
-          await db.collection("utilisateurs").doc(entrepriseConnectee.uid).update({ abonnement: plan });
+          await demanderAbonnement(entrepriseConnectee.uid, plan);
           window.location.reload();
         } catch (err) {
           console.error(err);
-          alert("Erreur lors de la mise à jour de votre abonnement.");
+          alert("Erreur lors de l'envoi de votre demande.");
           btn.textContent = `Choisir ${libelle}`;
         }
       });

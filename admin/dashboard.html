@@ -28,6 +28,7 @@
       <li><a href="dashboard.html" class="active">Validation des offres</a></li>
       <li><a href="candidatures.html">Présélection candidatures</a></li>
       <li><a href="coaching.html">Demandes de coaching</a></li>
+      <li><a href="abonnements.html">Demandes d'abonnement</a></li>
       <li><a href="statistiques.html">Statistiques</a></li>
     </ul>
   </aside>
@@ -60,6 +61,10 @@
       <div class="stat-card">
         <div class="stat-num" id="stat-coaching">—</div>
         <div class="stat-label">Nouvelles demandes de coaching</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-abonnements">—</div>
+        <div class="stat-label">Demandes d'abonnement en attente</div>
       </div>
     </div>
 
@@ -116,6 +121,7 @@
     document.getElementById("stat-refusees").textContent = stats.nbOffresRefusees;
     document.getElementById("stat-etudiants").textContent = stats.nbEtudiants;
     document.getElementById("stat-coaching").textContent = stats.nbDemandesCoachingNouvelles;
+    document.getElementById("stat-abonnements").textContent = stats.nbDemandesAbonnementEnAttente;
 
     const corps = document.getElementById("corps-tableau-validation");
     corps.innerHTML = enAttente.length

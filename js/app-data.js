@@ -100,6 +100,14 @@ async function postulerOffre(offre, profilEtudiant, etudiantId) {
     entrepriseNom: offre.entrepriseNom,
     etudiantId,
     etudiantNom: profilEtudiant.nom,
+    // Instantané du profil au moment de la candidature : permet à
+    // l'entreprise et à l'équipe RH de voir les infos utiles du candidat
+    // sans avoir besoin d'un accès direct à son profil complet.
+    etudiantUniversite: profilEtudiant.universite || "",
+    etudiantNiveauEtude: profilEtudiant.niveauEtude || "",
+    etudiantDomaine: profilEtudiant.domaine || "",
+    etudiantCompetences: profilEtudiant.competences || [],
+    etudiantCvLien: profilEtudiant.cvLien || "",
     matchScore: score,
     statut: "envoyee",
     dateEnvoi: firebase.firestore.FieldValue.serverTimestamp(),
@@ -118,6 +126,46 @@ async function chargerCandidaturesEntreprise(entrepriseId) {
 
 async function mettreAJourStatutCandidature(candidatureId, statut) {
   await db.collection("candidatures").doc(candidatureId).update({ statut });
+}
+
+/* ---------- Abonnements entreprise (demande puis confirmation RH) ---------- */
+
+/** L'entreprise demande une formule : elle ne peut pas s'attribuer elle-même
+    l'abonnement, seule l'équipe RH confirme après réception du paiement. */
+async function demanderAbonnement(entrepriseUid, plan) {
+  await db.collection("utilisateurs").doc(entrepriseUid).update({
+    abonnementDemande: plan,
+    abonnementStatut: "en_attente",
+  });
+}
+
+async function chargerDemandesAbonnement() {
+  const snap = await db.collection("utilisateurs").where("role", "==", "entreprise").get();
+  return snap.docs
+    .map((d) => ({ uid: d.id, ...d.data() }))
+    .filter((e) => e.abonnementStatut === "en_attente");
+}
+
+/** Confirmation RH : c'est ce qui active réellement l'abonnement, après
+    vérification manuelle du paiement effectué par l'entreprise. */
+async function confirmerAbonnement(entrepriseUid, plan) {
+  await db.collection("utilisateurs").doc(entrepriseUid).update({
+    abonnement: plan,
+    abonnementStatut: "confirme",
+  });
+}
+
+async function refuserDemandeAbonnement(entrepriseUid) {
+  await db.collection("utilisateurs").doc(entrepriseUid).update({
+    abonnementStatut: "refuse",
+  });
+}
+
+/* ---------- CVthèque (accès entreprise aux profils candidats) ---------- */
+
+async function chargerCvtheque() {
+  const snap = await db.collection("utilisateurs").where("role", "==", "etudiant").get();
+  return snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
 }
 
 /* ---------- Présélection admin/RH (toutes les candidatures) ---------- */
@@ -184,6 +232,7 @@ async function chargerStatistiquesAdmin() {
     nbRecrutements: candidatures.filter((c) => c.statut === "acceptee").length,
     nbDemandesCoaching: demandesCoaching.length,
     nbDemandesCoachingNouvelles: demandesCoaching.filter((d) => (d.statut || "nouvelle") === "nouvelle").length,
+    nbDemandesAbonnementEnAttente: utilisateurs.filter((u) => u.role === "entreprise" && u.abonnementStatut === "en_attente").length,
   };
 }
 
