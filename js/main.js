@@ -9,7 +9,43 @@ document.addEventListener("DOMContentLoaded", () => {
   initNavToggle();
   initRoleTabs();
   initAuthAwareNav();
+  initScrollReveal();
 });
+
+/* ---------- Apparition au scroll (voir .reveal dans css/style.css) ----------
+   Ajoute une légère animation d'entrée sur les cartes/tableaux de bord au fil
+   du défilement, pour un rendu plus vivant pendant la démonstration. Purement
+   visuel : si le navigateur ne supporte pas IntersectionObserver, le contenu
+   reste simplement visible sans animation. */
+function initScrollReveal() {
+  const cibles = document.querySelectorAll(
+    ".card, .step, .stat-card, .offer-card, .form-card, .filters-bar"
+  );
+  if (!cibles.length) return;
+
+  if (!("IntersectionObserver" in window)) {
+    cibles.forEach((el) => el.classList.add("reveal", "is-visible"));
+    return;
+  }
+
+  cibles.forEach((el, i) => {
+    el.classList.add("reveal");
+    el.style.transitionDelay = `${Math.min(i % 6, 5) * 60}ms`;
+  });
+
+  const observateur = new IntersectionObserver(
+    (entrees) => {
+      entrees.forEach((entree) => {
+        if (entree.isIntersecting) {
+          entree.target.classList.add("is-visible");
+          observateur.unobserve(entree.target);
+        }
+      });
+    },
+    { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+  );
+  cibles.forEach((el) => observateur.observe(el));
+}
 
 /* ---------- Menu mobile (drawer, voir css/style.css) ---------- */
 function initNavToggle() {
