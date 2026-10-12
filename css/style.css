@@ -333,7 +333,7 @@ label{ display:block; font-size:.85rem; font-weight:600; margin:0 0 6px; color:v
 .field{ margin-bottom:20px; }
 .hint{ font-size:.78rem; color:var(--slate-light); margin-top:4px; }
 input[type=text], input[type=email], input[type=password], input[type=tel],
-input[type=date], input[type=number], select, textarea{
+input[type=date], input[type=number], input[type=url], select, textarea{
   width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:var(--radius-sm);
   font-family:var(--font-body); font-size:.94rem; color:var(--ink); background:var(--paper);
   transition:border-color .18s ease, box-shadow .18s ease;
