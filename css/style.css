@@ -475,17 +475,35 @@ footer.site a:hover{ color:#fff; }
 .empty-state{ text-align:center; padding:64px 20px; color:var(--slate); }
 .empty-state h3{ color:var(--ink); }
 
-/* ---------- Menu mobile (drawer) ---------- */
+/* =========================================================
+   MOBILE — refonte (≤ 900px tablette / ≤ 560px téléphone)
+   Principes : en-tête compact, menu plein écran avec boutons d'action,
+   boutons pleine largeur (cibles tactiles ≥ 46px), champs en 16px
+   (pas de zoom iOS), espacements resserrés, navigation des tableaux
+   de bord en bandeau horizontal défilant (au lieu d'être masquée).
+   ========================================================= */
 @media (max-width: 900px){
+  :root{ --topbar-h:64px; }
+  body{ overflow-x:clip; }
+
+  /* En-tête (le flou est retiré : backdrop-filter piégerait le menu fixe) */
+  .topbar{ background:var(--paper); backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .topbar .container{ height:var(--topbar-h); gap:12px; }
+  .brand{ font-size:1.05rem; gap:9px; }
+  .brand-mark{ width:32px; height:32px; border-radius:9px; }
+  .nav-toggle{ display:inline-flex; width:44px; height:44px; border-radius:12px; background:var(--fog); }
+  .nav-toggle:hover{ background:var(--fog-deep); }
+  .topbar .nav-actions > span{ display:none; }
+
+  /* Menu plein écran */
   .nav-links{
-    position:fixed; top:74px; left:0; right:0; bottom:0;
+    position:fixed; top:var(--topbar-h); left:0; right:0; bottom:0;
     background:var(--paper);
-    flex-direction:column; align-items:flex-start; gap:4px;
-    padding:20px 24px 32px;
+    flex-direction:column; align-items:stretch; justify-content:flex-start; gap:0;
+    padding:8px 20px 28px; overflow-y:auto;
     transform:translateY(-12px);
     opacity:0; visibility:hidden; pointer-events:none;
     transition:transform .22s var(--ease), opacity .18s ease, visibility 0s linear .22s;
-    box-shadow:var(--shadow-3);
     z-index:90;
   }
   .nav-links.is-open{
@@ -493,24 +511,95 @@ footer.site a:hover{ color:#fff; }
     transition:transform .22s var(--ease), opacity .18s ease, visibility 0s;
   }
   .nav-links li{ width:100%; }
-  .nav-links a{ display:block; padding:13px 4px; width:100%; font-size:1rem; border-bottom:1px solid var(--line-soft); }
+  .nav-links a{
+    display:flex; align-items:center; min-height:56px; padding:0 2px; width:100%;
+    font-family:var(--font-display); font-size:1.08rem; font-weight:600; color:var(--ink);
+    border-bottom:1px solid var(--line-soft);
+  }
   .nav-links a::after{ display:none; }
-  .nav-toggle{ display:inline-flex; }
+  .nav-links a.active{ color:var(--dusk); }
+  .nav-links .nav-actions-mobile{ margin-top:auto; padding-top:28px; }
+  .nav-links .nav-actions-mobile .nav-actions{ flex-direction:column; align-items:stretch; gap:10px; width:100%; }
+  .nav-links .nav-actions-mobile .btn{ width:100%; min-height:50px; font-size:1rem; border-bottom:1px solid transparent; }
+  .nav-links .nav-actions-mobile .btn-ghost{ border-color:var(--line); color:var(--ink); }
+  .nav-links .nav-actions-mobile .btn-primary{ color:#fff; }
+
+  /* Typographie & rythme */
+  h1{ font-size:clamp(1.75rem, 7.4vw, 2.25rem); line-height:1.15; }
+  h2{ font-size:clamp(1.4rem, 5.8vw, 1.75rem); }
+  .section{ padding:56px 0; }
+  .section-tight{ padding:40px 0; }
+  .section-head{ margin-bottom:28px; }
+  .eyebrow{ font-size:.95rem; letter-spacing:.06em; margin-bottom:10px; }
+
+  /* Hero */
+  .hero-academic{ padding:52px 0 48px; }
+  .hero-academic::after{ width:260px; height:260px; top:-110px; right:-110px; }
+  .hero-academic p{ font-size:1rem; }
+  .hero-cta{ flex-direction:column; gap:10px; margin-top:24px; }
+  .hero-cta .btn{ width:100%; min-height:50px; font-size:1rem; }
+
+  /* Boutons */
+  .btn{ min-height:46px; }
+  .btn-sm{ min-height:40px; }
+
+  /* Grilles & cartes */
+  .steps, .cards-3, .offer-grid{ grid-template-columns:1fr !important; gap:14px; }
+  .card, .step{ padding:22px; }
+  .offer-card{ padding:20px; }
+  .offer-top{ flex-wrap:wrap; }
+  .step-num{ margin-bottom:12px; }
+  .reveal{ transform:translateY(10px); }
+  [style*="grid-template-columns:2fr 1fr"]{ grid-template-columns:1fr !important; }
+
+  /* Formulaires */
+  input[type=text], input[type=email], input[type=password], input[type=tel],
+  input[type=date], input[type=number], input[type=url], select, textarea{
+    font-size:16px; padding:13px 14px;
+  }
+  .form-card{ padding:26px 22px; border-radius:var(--radius); }
+  .role-tab{ padding:12px 8px; }
+  .filters-bar{ padding:16px; gap:12px; }
+  .filters-bar .field{ min-width:100%; flex:1 1 100%; }
+  .filters-bar .btn{ width:100%; }
+
+  /* Tableaux de bord */
+  .app-shell{ grid-template-columns:1fr; min-height:0; }
+  .app-side{
+    display:block; position:sticky; top:var(--topbar-h); z-index:80;
+    height:auto; padding:10px 14px; overflow-x:auto; overflow-y:hidden;
+    background:var(--ink-deep); scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .app-side::-webkit-scrollbar{ display:none; }
+  .app-side-user{ display:none; }
+  .app-nav{ flex-direction:row; gap:8px; width:max-content; }
+  .app-nav a{ padding:10px 16px; border-radius:100px; font-size:.88rem; white-space:nowrap; background:rgba(255,255,255,.07); }
+  .app-nav a:hover{ transform:none; }
+  .app-nav a.active{ box-shadow:none; }
+  .app-main{ padding:24px 16px 8px; max-width:none; }
+  .app-head{ flex-direction:column; align-items:flex-start; gap:14px; margin-bottom:22px; }
+  .stats-row{ grid-template-columns:1fr 1fr; gap:10px; margin-bottom:26px; }
+  .stat-card{ padding:16px; }
+  .stat-num{ font-size:1.5rem; }
+  .stat-label{ font-size:.7rem; }
+  .status-label{ font-size:.64rem; }
+  thead th{ padding:11px 12px; }
+  tbody td{ padding:12px; }
+
+  /* Pied de page */
+  footer.site{ padding:40px 0 24px; margin-top:56px; }
+  .footer-cols{ grid-template-columns:1fr; gap:26px; margin-bottom:26px; }
+  .footer-bottom{ flex-direction:column; align-items:flex-start; gap:8px; }
 }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 900px){
-  .steps, .cards-3, .offer-grid{ grid-template-columns:1fr; }
-  .stats-row{ grid-template-columns:1fr 1fr; }
-  .app-shell{ grid-template-columns:1fr; }
-  .app-side{ display:none; }
-  .app-main{ padding:26px 18px; }
-  .footer-cols{ grid-template-columns:1fr; }
+@media (hover:none){
+  .card:hover, .step:hover, .offer-card:hover, .stat-card:hover, .btn:hover{ transform:none; }
 }
 
 @media (max-width: 560px){
   .container{ padding:0 16px; }
-  .stats-row{ grid-template-columns:1fr 1fr; gap:10px; }
-  .form-card{ padding:24px; }
-  .hero-academic{ padding:60px 0 52px; }
+  .stats-row{ gap:10px; }
+  .form-card{ padding:24px 18px; }
+  .topbar .nav-actions .btn-sm{ padding:8px 12px; }
 }

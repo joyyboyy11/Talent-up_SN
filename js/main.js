@@ -10,7 +10,17 @@ document.addEventListener("DOMContentLoaded", () => {
   initRoleTabs();
   initAuthAwareNav();
   initScrollReveal();
+  initAppNavScroll();
 });
+
+/* ---------- Bandeau de navigation des tableaux de bord (mobile) :
+   fait défiler l'onglet actif dans la zone visible. ---------- */
+function initAppNavScroll() {
+  const actif = document.querySelector(".app-nav a.active");
+  const bande = document.querySelector(".app-side");
+  if (!actif || !bande || bande.scrollWidth <= bande.clientWidth) return;
+  bande.scrollLeft = actif.offsetLeft - 14;
+}
 
 /* ---------- Apparition au scroll (voir .reveal dans css/style.css) ----------
    Ajoute une légère animation d'entrée sur les cartes/tableaux de bord au fil
@@ -52,6 +62,27 @@ function initNavToggle() {
   const toggle = document.querySelector(".nav-toggle");
   const links = document.querySelector(".nav-links");
   if (!toggle || !links) return;
+
+  // Sur mobile, les boutons d'action (Connexion / Créer un compte) migrent
+  // dans le menu plein écran ; sur ordinateur ils reviennent dans l'en-tête.
+  // Le nœud est déplacé (pas cloné) : initAuthAwareNav continue de fonctionner.
+  const actions = document.querySelector(".topbar .nav-actions");
+  if (actions) {
+    const mq = window.matchMedia("(max-width: 900px)");
+    const slot = document.createElement("li");
+    slot.className = "nav-actions-mobile";
+    const placer = () => {
+      if (mq.matches) {
+        slot.appendChild(actions);
+        links.appendChild(slot);
+      } else {
+        toggle.parentNode.insertBefore(actions, toggle);
+        slot.remove();
+      }
+    };
+    placer();
+    mq.addEventListener("change", placer);
+  }
 
   const setOpen = (open) => {
     links.classList.toggle("is-open", open);
