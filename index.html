@@ -21,6 +21,7 @@
       <li><a href="#comment-ca-marche">Comment ça marche</a></li>
       <li><a href="#formation">Formation &amp; Coaching</a></li>
       <li><a href="entreprise/tarifs.html">Entreprises</a></li>
+      <li><a href="#equipe">À propos</a></li>
     </ul>
     <div class="nav-actions" id="nav-actions">
       <a href="connexion.html" class="btn btn-ghost btn-sm">Connexion</a>
@@ -127,7 +128,7 @@
         <p>Une présélection RH systématique pour vous faire gagner du temps sur des profils réellement qualifiés.</p>
       </div>
     </div>
-    <p style="margin-top:24px;"><a href="entreprise/tarifs.html" class="btn btn-primary btn-sm">Voir les offres d'abonnement</a></p>
+    <p style="margin-top:24px;"><strong>À partir de 15 000 FCFA/mois</strong> pour les entreprises, gratuit pour les candidats. &nbsp;<a href="entreprise/tarifs.html" class="btn btn-primary btn-sm">Voir les offres d'abonnement</a></p>
   </div>
 </section>
 
@@ -144,15 +145,65 @@
         <p style="color:var(--slate);">Gratuits et viraux, mais sans aucune présélection ni garantie de fiabilité des offres.</p>
       </div>
       <div class="card">
-        <h3>LinkedIn &amp; sites d'annonces</h3>
-        <p style="color:var(--slate);">Bonne audience, mais pas de CVthèque qualifiée, pas de présélection RH, pas de formation intégrée.</p>
+        <h3>LinkedIn &amp; jobboards locaux</h3>
+        <p style="color:var(--slate);">LinkedIn, EmploiDakar, SenJob, EmploiSenegal, Samabac : une bonne audience, mais pas de CVthèque qualifiée, pas de présélection RH, pas de formation intégrée.</p>
       </div>
       <div class="card">
         <h3>Cabinets de recrutement</h3>
         <p style="color:var(--slate);">Expertise et réseau réels, mais un coût qui les rend peu accessibles aux PME et startups.</p>
       </div>
     </div>
-    <p class="hint" style="margin-top:20px;">Talent'Up SN combine une CVthèque qualifiée et une présélection RH systématique, à un tarif accessible pour les PME sénégalaises.</p>
+    <p class="hint" style="margin-top:20px;">Talent'Up SN combine une CVthèque qualifiée et une présélection RH systématique, à partir de 15 000 FCFA/mois pour les PME sénégalaises.</p>
+  </div>
+</section>
+
+<section class="section" id="equipe">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">À propos</span>
+      <h2>Qui est derrière Talent'Up SN</h2>
+      <p>Un projet porté par trois promoteurs, étudiants à ENSUP Afrique, qui vivent eux-mêmes le décalage entre formation et emploi.</p>
+    </div>
+    <div class="cards-3">
+      <div class="card"><h3>Cheikh Ahmeth NDAW</h3><p style="color:var(--slate);">Direction technique</p></div>
+      <div class="card"><h3>Tono SARR</h3><p style="color:var(--slate);">Co-direction technique</p></div>
+      <div class="card"><h3>Aïcha Iyane SY</h3><p style="color:var(--slate);">Direction RH et relation entreprises</p></div>
+    </div>
+    <p style="margin-top:24px;" id="contact"><strong>Nous contacter :</strong>
+      WhatsApp <a href="https://wa.me/221785312905">+221 78 531 29 05</a>
+      · Basés à Dakar, Sénégal</p>
+  </div>
+</section>
+
+<section class="section-tight" id="beta" style="background:var(--paper); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+  <div class="container">
+    <div class="section-head" style="margin-bottom:24px;">
+      <span class="eyebrow">Phase bêta</span>
+      <h2>Rejoignez la phase bêta</h2>
+      <p>La plateforme démarre. Laissez-nous vos coordonnées pour être parmi les premiers candidats ou entreprises invités.</p>
+    </div>
+    <form id="form-beta" class="form-card form-wide" style="margin:0;">
+      <div class="field"><label for="beta-nom">Nom</label><input type="text" id="beta-nom" required></div>
+      <div class="field"><label for="beta-email">Email</label><input type="email" id="beta-email" required></div>
+      <div class="field"><label for="beta-profil">Je suis</label>
+        <select id="beta-profil" required><option value="candidat">Candidat(e)</option><option value="entreprise">Entreprise</option></select></div>
+      <button type="submit" class="btn btn-primary">Je me pré-inscris</button>
+      <p class="hint" id="beta-msg" role="status"></p>
+    </form>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">FAQ</span><h2>Questions fréquentes</h2></div>
+    <div style="max-width:760px;">
+      <details class="card" style="margin-bottom:12px;"><summary><strong>Que deviennent mes données personnelles ?</strong></summary>
+        <p>Elles servent uniquement à la mise en relation avec les recruteurs. Vous pouvez demander leur suppression ou leur export à tout moment : voir les <a href="mentions-legales.html">mentions légales &amp; confidentialité</a>.</p></details>
+      <details class="card" style="margin-bottom:12px;"><summary><strong>Comment fonctionne le score ?</strong></summary>
+        <p>Le score est indicatif : 70 % pour la correspondance des compétences, 30 % pour l'adéquation du profil (domaine et niveau de diplôme). Il est toujours revu par notre équipe RH.</p></details>
+      <details class="card" style="margin-bottom:12px;"><summary><strong>Combien ça coûte ?</strong></summary>
+        <p>C'est gratuit pour les candidats. Pour les entreprises, les abonnements démarrent à 15 000 FCFA/mois : <a href="entreprise/tarifs.html">voir les tarifs</a>.</p></details>
+    </div>
   </div>
 </section>
 
@@ -170,14 +221,13 @@
         <p><a href="entreprise/tarifs.html">Tarifs entreprises</a></p>
       </div>
       <div>
-        <h4 style="color:#fff; font-size:.9rem;">Espaces</h4>
-        <p><a href="etudiant/dashboard.html">Espace candidat</a></p>
-        <p><a href="entreprise/dashboard.html">Espace entreprise</a></p>
-        <p><a href="admin/dashboard.html">Espace admin / RH</a></p>
-      </div>
+        <h4 style="color:#fff; font-size:.9rem;">Talent'Up SN</h4>
+        <p><a href="#equipe">À propos &amp; équipe</a></p>
+        <p><a href="#faq">FAQ</a></p>
+        <p><a href="#contact">Contact</a></p></div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 Talent'Up SN. Tous droits réservés.</span>
+      <span>© 2026 Talent'Up SN · Dakar, Sénégal. Tous droits réservés.</span>
       <span><a href="mentions-legales.html" style="color:inherit;">Mentions légales &amp; confidentialité</a></span>
     </div>
   </div>
@@ -206,6 +256,24 @@
       e.preventDefault();
       deconnecterUtilisateur("connexion.html");
     });
+  });
+</script>
+<script>
+  document.getElementById("form-beta").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("beta-msg");
+    try {
+      await db.collection("preinscriptions").add({
+        nom: document.getElementById("beta-nom").value.trim(),
+        email: document.getElementById("beta-email").value.trim(),
+        profil: document.getElementById("beta-profil").value,
+        date: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      e.target.reset();
+      msg.textContent = "Merci ! Vous êtes pré-inscrit(e).";
+    } catch (err) {
+      msg.textContent = "Une erreur est survenue, merci de réessayer plus tard.";
+    }
   });
 </script>
 </body>

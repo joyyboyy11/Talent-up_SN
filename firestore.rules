@@ -102,5 +102,14 @@ service cloud.firestore {
 
       allow update, delete: if estAdmin();
     }
+
+    // ---------- Collection preinscriptions (formulaire bêta de l'accueil) ----------
+    match /preinscriptions/{id} {
+      allow create: if request.resource.data.keys().hasOnly(["nom","email","profil","date"])
+                    && request.resource.data.nom is string && request.resource.data.nom.size() <= 100
+                    && request.resource.data.email is string && request.resource.data.email.size() <= 150
+                    && request.resource.data.profil in ["candidat","entreprise"];
+      allow read, update, delete: if estAdmin();
+    }
   }
 }
